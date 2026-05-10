@@ -8,22 +8,7 @@ from "../services/staff.service.js";
 import sendStaffCredentials
 from "../services/sendStaffCredentials.js";
 
-/* ================= HELPERS ================= */
-
-const generateUsername = (
-  name
-) => {
-
-  return (
-    name
-      .toLowerCase()
-      .replace(/\s/g, "") +
-
-    Math.floor(
-      100 + Math.random() * 900
-    )
-  );
-};
+/* ================= PASSWORD GENERATOR ================= */
 
 const generatePassword = () => {
 
@@ -55,6 +40,7 @@ const getStaff = async (
       success: true,
 
       ...data
+
     });
 
   } catch (err) {
@@ -65,7 +51,9 @@ const getStaff = async (
     );
 
     next(err);
+
   }
+
 };
 
 /* ================= CREATE STAFF ================= */
@@ -78,21 +66,44 @@ const createStaff = async (
 
   try {
 
+    console.log("\n");
+    console.log("=================================");
+    console.log("🚀 CREATE STAFF STARTED");
+    console.log("=================================");
+
     let {
+
       name,
+
       email,
+
+      username,
+
       role,
+
       status,
+
       shift,
+
       store_id
+
     } = req.body;
+
+    console.log("📦 REQUEST BODY:");
+    console.log(req.body);
 
     /* ================= VALIDATION ================= */
 
     if (
+
       !name ||
+
       !email ||
+
+      !username ||
+
       !store_id
+
     ) {
 
       return res.status(400).json({
@@ -100,14 +111,21 @@ const createStaff = async (
         success: false,
 
         message:
-          "Name, Email and Store required"
+          "Name, Email, Username and Store required"
+
       });
+
     }
 
-    /* ================= CLEAN EMAIL ================= */
+    /* ================= CLEAN DATA ================= */
 
     email =
       email
+        .toLowerCase()
+        .trim();
+
+    username =
+      username
         .toLowerCase()
         .trim();
 
@@ -115,7 +133,9 @@ const createStaff = async (
 
     const existingEmail =
       await Staff.findOne({
+
         email
+
       });
 
     if (existingEmail) {
@@ -126,32 +146,31 @@ const createStaff = async (
 
         message:
           "Email already exists"
+
       });
+
     }
-
-    /* ================= GENERATE USERNAME ================= */
-
-    let username =
-      generateUsername(name);
 
     /* ================= CHECK USERNAME ================= */
 
-    let existingUsername =
+    const existingUsername =
       await Staff.findOne({
+
         username
+
       });
 
-    while (
-      existingUsername
-    ) {
+    if (existingUsername) {
 
-      username =
-        generateUsername(name);
+      return res.status(400).json({
 
-      existingUsername =
-        await Staff.findOne({
-          username
-        });
+        success: false,
+
+        message:
+          "Username already exists"
+
+      });
+
     }
 
     /* ================= PASSWORD ================= */
@@ -159,13 +178,25 @@ const createStaff = async (
     const rawPassword =
       generatePassword();
 
+    console.log(
+      "🔑 GENERATED PASSWORD:",
+      rawPassword
+    );
+
     const hashedPassword =
       await bcrypt.hash(
+
         rawPassword,
+
         10
+
       );
 
-    /* ================= CREATE ================= */
+    /* ================= CREATE STAFF ================= */
+
+    console.log(
+      "💾 CREATING STAFF..."
+    );
 
     const staff =
       await Staff.create({
@@ -197,24 +228,48 @@ const createStaff = async (
         avgOrder: 0,
 
         mustChangePassword: true
+
       });
+
+    console.log(
+      "✅ STAFF CREATED SUCCESSFULLY"
+    );
+
+    console.log(staff);
 
     /* ================= SEND EMAIL ================= */
 
-    await sendStaffCredentials({
+    console.log("\n");
+    console.log("=================================");
+    console.log("📧 SENDING STAFF EMAIL");
+    console.log("=================================");
 
-      name,
+    const emailResponse =
+      await sendStaffCredentials({
 
-      email,
+        name,
 
-      username,
+        email,
 
-      password:
-        rawPassword,
+        username,
 
-      role:
-        staff.role
-    });
+        password:
+          rawPassword,
+
+        role:
+          staff.role
+
+      });
+
+    console.log(
+      "📧 EMAIL RESPONSE:"
+    );
+
+    console.log(emailResponse);
+
+    console.log(
+      "✅ EMAIL FUNCTION COMPLETED"
+    );
 
     /* ================= RESPONSE ================= */
 
@@ -226,17 +281,22 @@ const createStaff = async (
         "Staff created successfully",
 
       staff
+
     });
 
   } catch (err) {
 
-    console.error(
-      "CREATE STAFF ERROR:",
-      err
-    );
+    console.log("\n");
+    console.log("=================================");
+    console.log("❌ CREATE STAFF ERROR");
+    console.log("=================================");
+
+    console.error(err);
 
     next(err);
+
   }
+
 };
 
 /* ================= UPDATE STAFF ================= */
@@ -260,9 +320,13 @@ const updateStaff = async (
         req.body,
 
         {
+
           new: true,
+
           runValidators: true
+
         }
+
       );
 
     if (!updated) {
@@ -273,7 +337,9 @@ const updateStaff = async (
 
         message:
           "Staff not found"
+
       });
+
     }
 
     return res.status(200).json({
@@ -284,6 +350,7 @@ const updateStaff = async (
         "Staff updated successfully",
 
       staff: updated
+
     });
 
   } catch (err) {
@@ -294,7 +361,9 @@ const updateStaff = async (
     );
 
     next(err);
+
   }
+
 };
 
 /* ================= DELETE STAFF ================= */
@@ -323,7 +392,9 @@ const deleteStaff = async (
 
         message:
           "Staff not found"
+
       });
+
     }
 
     return res.status(200).json({
@@ -332,6 +403,7 @@ const deleteStaff = async (
 
       message:
         "Staff deleted permanently"
+
     });
 
   } catch (err) {
@@ -342,7 +414,9 @@ const deleteStaff = async (
     );
 
     next(err);
+
   }
+
 };
 
 export default {
@@ -354,4 +428,5 @@ export default {
   updateStaff,
 
   deleteStaff
+
 };
