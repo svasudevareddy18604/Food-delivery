@@ -6,6 +6,8 @@ import {
 
   getStoreInventory,
 
+  getAllInventory,
+
   updateInventoryQuantity,
 
 } from "../controllers/storeInventory.controller.js";
@@ -79,7 +81,66 @@ router.post(
 );
 
 /* =========================================
-   GET STORE INVENTORY
+   GET ALL INVENTORY
+========================================= */
+
+router.get(
+
+  "/",
+
+  async (req, res) => {
+
+    try {
+
+      const inventory =
+
+        await getAllInventory();
+
+      console.log(
+        "ALL INVENTORY:",
+        inventory.length
+      );
+
+      return res.status(200).json({
+
+        success: true,
+
+        count:
+          inventory.length,
+
+        inventory,
+
+      });
+
+    }
+
+    catch (err) {
+
+      console.log(
+
+        "GET ALL INVENTORY ROUTE ERROR:",
+
+        err
+
+      );
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          err.message,
+
+      });
+
+    }
+
+  }
+
+);
+
+/* =========================================
+   GET SINGLE STORE INVENTORY
 ========================================= */
 
 router.get(
