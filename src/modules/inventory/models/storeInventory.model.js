@@ -105,7 +105,7 @@ storeInventorySchema.pre(
 
   "save",
 
-  function (next) {
+  function () {
 
     /* OUT OF STOCK */
 
@@ -138,8 +138,6 @@ storeInventorySchema.pre(
         "Active";
 
     }
-
-    next();
 
   }
 
