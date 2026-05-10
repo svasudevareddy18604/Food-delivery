@@ -3,28 +3,6 @@ import Product from "../models/product.model.js";
 import QRCode from "qrcode";
 
 /* =========================================
-   STATUS LOGIC
-========================================= */
-
-const getStatus = (stock) => {
-
-  if (stock <= 0) {
-
-    return "Out of Stock";
-
-  }
-
-  if (stock < 10) {
-
-    return "Low Stock";
-
-  }
-
-  return "Active";
-
-};
-
-/* =========================================
    GET PRODUCTS
 ========================================= */
 
@@ -139,9 +117,6 @@ export const addProduct =
       const price =
         Number(data.price);
 
-      const stock =
-        Number(data.stock);
-
       /* VALIDATION */
 
       if (
@@ -152,9 +127,7 @@ export const addProduct =
 
         !data.category ||
 
-        !data.price ||
-
-        !data.stock
+        !data.price
 
       ) {
 
@@ -168,15 +141,13 @@ export const addProduct =
 
       if (
 
-        isNaN(price) ||
-
-        isNaN(stock)
+        isNaN(price)
 
       ) {
 
         throw new Error(
 
-          "Invalid price or stock"
+          "Invalid price"
 
         );
 
@@ -229,7 +200,7 @@ export const addProduct =
           qrData
         );
 
-      /* CREATE */
+      /* CREATE PRODUCT */
 
       const product =
 
@@ -260,11 +231,6 @@ export const addProduct =
             data.description || "",
 
           price,
-
-          stock,
-
-          status:
-            getStatus(stock),
 
           image:
 
@@ -319,20 +285,15 @@ export const updateProduct =
       const price =
         Number(data.price);
 
-      const stock =
-        Number(data.stock);
-
       if (
 
-        isNaN(price) ||
-
-        isNaN(stock)
+        isNaN(price)
 
       ) {
 
         throw new Error(
 
-          "Invalid price or stock"
+          "Invalid price"
 
         );
 
@@ -365,11 +326,6 @@ export const updateProduct =
           data.description || "",
 
         price,
-
-        stock,
-
-        status:
-          getStatus(stock),
 
       };
 

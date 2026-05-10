@@ -139,42 +139,6 @@ const productSchema = new mongoose.Schema(
     },
 
     /* =====================================
-       STOCK
-    ===================================== */
-
-    stock: {
-
-      type: Number,
-
-      default: 0,
-
-      min: 0,
-
-    },
-
-    /* =====================================
-       STATUS
-    ===================================== */
-
-    status: {
-
-      type: String,
-
-      enum: [
-
-        "Active",
-
-        "Low Stock",
-
-        "Out of Stock",
-
-      ],
-
-      default: "Active",
-
-    },
-
-    /* =====================================
        PRODUCT IMAGE
     ===================================== */
 
@@ -198,52 +162,31 @@ const productSchema = new mongoose.Schema(
 
     },
 
+    /* =====================================
+       PRODUCT STATUS
+    ===================================== */
+
+    status: {
+
+      type: String,
+
+      enum: [
+
+        "Active",
+
+        "Inactive",
+
+      ],
+
+      default: "Active",
+
+    },
+
   },
 
   {
 
     timestamps: true,
-
-  }
-
-);
-
-/* =========================================
-   AUTO STATUS UPDATE
-========================================= */
-
-productSchema.pre(
-
-  "save",
-
-  function () {
-
-    /* OUT OF STOCK */
-
-    if (this.stock <= 0) {
-
-      this.status =
-        "Out of Stock";
-
-    }
-
-    /* LOW STOCK */
-
-    else if (this.stock < 10) {
-
-      this.status =
-        "Low Stock";
-
-    }
-
-    /* ACTIVE */
-
-    else {
-
-      this.status =
-        "Active";
-
-    }
 
   }
 

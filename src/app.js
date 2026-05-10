@@ -22,6 +22,13 @@ import storeRoutes
 from "./modules/stores/routes/index.js";
 
 /* =========================================
+   INVENTORY ROUTES
+========================================= */
+
+import inventoryRoutes
+from "./modules/inventory/routes/index.js";
+
+/* =========================================
    SUPPLY ROUTES
 ========================================= */
 
@@ -87,7 +94,7 @@ app.get(
 );
 
 /* =========================================
-   API ROUTES
+   AUTH ROUTES
 ========================================= */
 
 app.use(
@@ -95,24 +102,49 @@ app.use(
   authRoutes
 );
 
+/* =========================================
+   STAFF ROUTES
+========================================= */
+
 app.use(
   "/api/staff",
   staffRoutes
 );
+
+/* =========================================
+   PRODUCT ROUTES
+========================================= */
 
 app.use(
   "/api/products",
   productRoutes
 );
 
+/* =========================================
+   SETTINGS ROUTES
+========================================= */
+
 app.use(
   "/api/settings",
   settingsRoutes
 );
 
+/* =========================================
+   STORE ROUTES
+========================================= */
+
 app.use(
   "/api/stores",
   storeRoutes
+);
+
+/* =========================================
+   INVENTORY ROUTES
+========================================= */
+
+app.use(
+  "/api/inventory",
+  inventoryRoutes
 );
 
 /* =========================================
