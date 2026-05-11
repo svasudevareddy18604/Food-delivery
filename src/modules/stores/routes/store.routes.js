@@ -2,17 +2,15 @@ import express from "express";
 
 import {
 
-  getStores,
+  assignProductToStore,
 
-  getStore,
+  getStoreInventory,
 
-  addStore,
+  getAllInventory,
 
-  updateStore,
+  updateInventoryQuantity,
 
-  deleteStore
-
-} from "../controllers/store.controller.js";
+} from "../controllers/storeInventory.controller.js";
 
 /* =========================================
    ROUTER
@@ -22,62 +20,50 @@ const router =
   express.Router();
 
 /* =========================================
-   GET ALL STORES
-========================================= */
-
-router.get(
-
-  "/",
-
-  getStores
-
-);
-
-/* =========================================
-   GET SINGLE STORE
-========================================= */
-
-router.get(
-
-  "/:id",
-
-  getStore
-
-);
-
-/* =========================================
-   CREATE STORE
+   ASSIGN PRODUCT
 ========================================= */
 
 router.post(
 
-  "/",
+  "/assign",
 
-  addStore
+  assignProductToStore
 
 );
 
 /* =========================================
-   UPDATE STORE
+   GET STORE INVENTORY
+========================================= */
+
+router.get(
+
+  "/store/:storeId",
+
+  getStoreInventory
+
+);
+
+/* =========================================
+   GET ALL INVENTORY
+========================================= */
+
+router.get(
+
+  "/all",
+
+  getAllInventory
+
+);
+
+/* =========================================
+   UPDATE INVENTORY
 ========================================= */
 
 router.put(
 
-  "/:id",
+  "/:inventoryId",
 
-  updateStore
-
-);
-
-/* =========================================
-   DELETE STORE
-========================================= */
-
-router.delete(
-
-  "/:id",
-
-  deleteStore
+  updateInventoryQuantity
 
 );
 
