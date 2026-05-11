@@ -331,139 +331,127 @@ staffSchema.index({
 
 });
 
-/* ================= GENERATE STAFF CODE ================= */
+/* ================= PRE SAVE ================= */
 
 staffSchema.pre(
 
   "save",
 
-  async function (next) {
+  async function () {
 
-    try {
+    /* =====================================
+       CLEAN EMAIL
+    ===================================== */
 
-      /* =====================================
-         CLEAN EMAIL
-      ===================================== */
+    if (this.email) {
 
-      if (this.email) {
+      this.email =
 
-        this.email =
-
-          this.email
-            .toLowerCase()
-            .trim();
-
-      }
-
-      /* =====================================
-         CLEAN USERNAME
-      ===================================== */
-
-      if (this.username) {
-
-        this.username =
-
-          this.username
-            .toLowerCase()
-            .trim();
-
-      }
-
-      /* =====================================
-         CALCULATE AVG ORDER
-      ===================================== */
-
-      if (this.orders > 0) {
-
-        this.avgOrder =
-
-          Math.round(
-
-            this.sales /
-
-            this.orders
-
-          );
-
-      }
-
-      else {
-
-        this.avgOrder = 0;
-
-      }
-
-      /* =====================================
-         GENERATE STAFF CODE
-      ===================================== */
-
-      if (!this.staff_code) {
-
-        const count =
-
-          await mongoose
-            .model("Staff")
-            .countDocuments();
-
-        let prefix = "EMP";
-
-        /* ROLE PREFIX */
-
-        if (this.role === "Admin") {
-
-          prefix = "ADM";
-
-        }
-
-        else if (
-
-          this.role === "Manager"
-
-        ) {
-
-          prefix = "MNG";
-
-        }
-
-        else if (
-
-          this.role === "Cashier"
-
-        ) {
-
-          prefix = "CAS";
-
-        }
-
-        else if (
-
-          this.role === "Vendor"
-
-        ) {
-
-          prefix = "VEN";
-
-        }
-
-        /* FINAL CODE */
-
-        this.staff_code =
-
-          `${prefix}${String(
-
-            count + 1
-
-          ).padStart(3, "0")}`;
-
-      }
-
-      next();
+        this.email
+          .toLowerCase()
+          .trim();
 
     }
 
-    catch (err) {
+    /* =====================================
+       CLEAN USERNAME
+    ===================================== */
 
-      next(err);
+    if (this.username) {
+
+      this.username =
+
+        this.username
+          .toLowerCase()
+          .trim();
+
+    }
+
+    /* =====================================
+       AVG ORDER
+    ===================================== */
+
+    if (this.orders > 0) {
+
+      this.avgOrder =
+
+        Math.round(
+
+          this.sales /
+
+          this.orders
+
+        );
+
+    }
+
+    else {
+
+      this.avgOrder = 0;
+
+    }
+
+    /* =====================================
+       STAFF CODE
+    ===================================== */
+
+    if (!this.staff_code) {
+
+      const count =
+
+        await mongoose
+          .model("Staff")
+          .countDocuments();
+
+      let prefix = "EMP";
+
+      /* ROLE PREFIX */
+
+      if (this.role === "Admin") {
+
+        prefix = "ADM";
+
+      }
+
+      else if (
+
+        this.role === "Manager"
+
+      ) {
+
+        prefix = "MNG";
+
+      }
+
+      else if (
+
+        this.role === "Cashier"
+
+      ) {
+
+        prefix = "CAS";
+
+      }
+
+      else if (
+
+        this.role === "Vendor"
+
+      ) {
+
+        prefix = "VEN";
+
+      }
+
+      /* FINAL CODE */
+
+      this.staff_code =
+
+        `${prefix}${String(
+
+          count + 1
+
+        ).padStart(3, "0")}`;
 
     }
 
