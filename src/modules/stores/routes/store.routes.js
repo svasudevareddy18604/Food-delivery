@@ -1,29 +1,88 @@
 import express from "express";
+
 import {
+
   getStores,
+
   getStore,
+
   addStore,
+
   updateStore,
+
   deleteStore
+
 } from "../controllers/store.controller.js";
 
-const router = express.Router();
+/* =========================================
+   ROUTER
+========================================= */
 
-/* ================= STORE ROUTES ================= */
+const router =
+  express.Router();
 
-// GET ALL
-router.get("/", getStores);
+/* =========================================
+   GET ALL STORES
+========================================= */
 
-// GET ONE
-router.get("/:id", getStore);
+router.get(
 
-// CREATE
-router.post("/", addStore);
+  "/",
 
-// UPDATE
-router.put("/:id", updateStore);
+  getStores
 
-// DELETE
-router.delete("/:id", deleteStore);
+);
+
+/* =========================================
+   GET SINGLE STORE
+========================================= */
+
+router.get(
+
+  "/:id",
+
+  getStore
+
+);
+
+/* =========================================
+   CREATE STORE
+========================================= */
+
+router.post(
+
+  "/",
+
+  addStore
+
+);
+
+/* =========================================
+   UPDATE STORE
+========================================= */
+
+router.put(
+
+  "/:id",
+
+  updateStore
+
+);
+
+/* =========================================
+   DELETE STORE
+========================================= */
+
+router.delete(
+
+  "/:id",
+
+  deleteStore
+
+);
+
+/* =========================================
+   EXPORT
+========================================= */
 
 export default router;
