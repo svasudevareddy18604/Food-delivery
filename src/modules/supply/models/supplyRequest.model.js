@@ -4,6 +4,7 @@ const supplyRequestSchema =
   new mongoose.Schema(
 
     {
+
       /* ======================================
          PRODUCT DETAILS
       ====================================== */
@@ -16,6 +17,7 @@ const supplyRequestSchema =
         ref: "Product",
 
         required: true
+
       },
 
       product_name: {
@@ -25,6 +27,7 @@ const supplyRequestSchema =
         required: true,
 
         trim: true
+
       },
 
       sku: {
@@ -34,6 +37,44 @@ const supplyRequestSchema =
         required: true,
 
         trim: true
+
+      },
+
+      /* ======================================
+         STORE DETAILS
+      ====================================== */
+
+      store_id: {
+
+        type:
+          mongoose.Schema.Types.ObjectId,
+
+        ref: "Store",
+
+        required: true
+
+      },
+
+      store_code: {
+
+        type: String,
+
+        required: true,
+
+        trim: true,
+
+        uppercase: true
+
+      },
+
+      store_name: {
+
+        type: String,
+
+        required: true,
+
+        trim: true
+
       },
 
       /* ======================================
@@ -47,6 +88,7 @@ const supplyRequestSchema =
         required: true,
 
         min: 1
+
       },
 
       notes: {
@@ -56,6 +98,7 @@ const supplyRequestSchema =
         default: "",
 
         trim: true
+
       },
 
       /* ======================================
@@ -69,6 +112,7 @@ const supplyRequestSchema =
         required: true,
 
         default: "Main Vendor"
+
       },
 
       requested_by: {
@@ -78,6 +122,7 @@ const supplyRequestSchema =
         required: true,
 
         default: "Vendor"
+
       },
 
       /* ======================================
@@ -99,9 +144,11 @@ const supplyRequestSchema =
           "Shipped",
 
           "Delivered"
+
         ],
 
         default: "Pending"
+
       },
 
       /* ======================================
@@ -113,6 +160,7 @@ const supplyRequestSchema =
         type: String,
 
         default: ""
+
       },
 
       approved_quantity: {
@@ -120,20 +168,49 @@ const supplyRequestSchema =
         type: Number,
 
         default: 0
+
       }
 
     },
 
     {
+
       timestamps: true
+
     }
+
   );
+
+/* ======================================
+   INDEXES
+====================================== */
+
+supplyRequestSchema.index({
+
+  store_id: 1
+
+});
+
+supplyRequestSchema.index({
+
+  status: 1
+
+});
+
+supplyRequestSchema.index({
+
+  createdAt: -1
+
+});
 
 /* ======================================
    EXPORT
 ====================================== */
 
 export default mongoose.model(
+
   "SupplyRequest",
+
   supplyRequestSchema
+
 );

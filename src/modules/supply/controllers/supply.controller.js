@@ -15,6 +15,16 @@ export const getRequests =
 
       const requests =
         await SupplyRequest.find()
+
+          .populate({
+
+            path: "store_id",
+
+            select:
+              "store_code name location"
+
+          })
+
           .sort({
             createdAt: -1
           });
@@ -26,6 +36,7 @@ export const getRequests =
         count: requests.length,
 
         requests
+
       });
 
     } catch (err) {
@@ -41,8 +52,11 @@ export const getRequests =
 
         message:
           "Failed to fetch supply requests"
+
       });
+
     }
+
   };
 
 /* =====================================================
@@ -66,6 +80,12 @@ export const createRequest =
 
         vendor_name,
 
+        store_id,
+
+        store_code,
+
+        store_name,
+
         notes
 
       } = req.body;
@@ -75,10 +95,21 @@ export const createRequest =
       ========================= */
 
       if (
+
         !product_id ||
+
         !product_name ||
+
         !sku ||
-        !quantity
+
+        !quantity ||
+
+        !store_id ||
+
+        !store_code ||
+
+        !store_name
+
       ) {
 
         return res.status(400).json({
@@ -87,7 +118,9 @@ export const createRequest =
 
           message:
             "All required fields must be provided"
+
         });
+
       }
 
       /* =========================
@@ -107,7 +140,9 @@ export const createRequest =
 
           message:
             "Product not found"
+
         });
+
       }
 
       /* =========================
@@ -130,6 +165,12 @@ export const createRequest =
             vendor_name ||
             "Main Vendor",
 
+          store_id,
+
+          store_code,
+
+          store_name,
+
           notes:
             notes || "",
 
@@ -138,6 +179,7 @@ export const createRequest =
 
           status:
             "Pending"
+
         });
 
       /* =========================
@@ -152,6 +194,7 @@ export const createRequest =
           "Supply request created successfully",
 
         request
+
       });
 
     } catch (err) {
@@ -166,9 +209,13 @@ export const createRequest =
         success: false,
 
         message:
+          err.message ||
           "Failed to create request"
+
       });
+
     }
+
   };
 
 /* =====================================================
@@ -207,7 +254,9 @@ export const updateRequestStatus =
 
           message:
             "Supply request not found"
+
         });
+
       }
 
       /* =========================
@@ -258,21 +307,28 @@ export const updateRequestStatus =
             product.status =
               "Out of Stock";
 
-          } else if (
+          }
+
+          else if (
             product.stock < 10
           ) {
 
             product.status =
               "Low Stock";
 
-          } else {
+          }
+
+          else {
 
             product.status =
               "Active";
+
           }
 
           await product.save();
+
         }
+
       }
 
       /* =========================
@@ -287,6 +343,7 @@ export const updateRequestStatus =
           "Supply request updated successfully",
 
         request
+
       });
 
     } catch (err) {
@@ -301,9 +358,13 @@ export const updateRequestStatus =
         success: false,
 
         message:
+          err.message ||
           "Failed to update request"
+
       });
+
     }
+
   };
 
 /* =====================================================
@@ -328,7 +389,9 @@ export const deleteRequest =
 
           message:
             "Request not found"
+
         });
+
       }
 
       return res.status(200).json({
@@ -337,6 +400,7 @@ export const deleteRequest =
 
         message:
           "Request deleted successfully"
+
       });
 
     } catch (err) {
@@ -352,6 +416,9 @@ export const deleteRequest =
 
         message:
           "Failed to delete request"
+
       });
+
     }
+
   };
