@@ -1,6 +1,11 @@
 import "./FoodItem.css";
 
+import { useNavigate } from "react-router-dom";
+
 function FoodItem(props) {
+
+  const navigate = useNavigate();
+
   return (
     <div className="food-item">
 
@@ -22,7 +27,10 @@ function FoodItem(props) {
             ₹ {props.price}
           </span>
 
-          <button className="add-btn">
+          <button
+            className="add-btn"
+            onClick={() => navigate("/cart")}
+          >
             Add
           </button>
 
