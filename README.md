@@ -1,2 +1,1 @@
-# OmniRetail
-POS System
+Food Delivery System
