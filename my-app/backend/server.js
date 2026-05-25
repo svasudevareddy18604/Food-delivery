@@ -97,6 +97,13 @@ app.use(
   require("./routes/merchantfood.routes")
 );
 
+app.use(
+
+  "/api/payment",
+
+  require("./routes/payment.routes")
+);
+
 /* =========================
    TEST ROUTE
 ========================= */

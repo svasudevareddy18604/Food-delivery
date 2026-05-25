@@ -7,6 +7,7 @@ import {
 
 import {
 
+  useNavigate,
   useParams
 
 } from "react-router-dom";
@@ -14,22 +15,23 @@ import {
 import axios
 from "axios";
 
+import "./RestaurantDetails.css";
+
 function RestaurantDetails() {
 
   /* =========================
-     GET PARAM
+     NAVIGATION
   ========================= */
 
-  const params =
+  const navigate =
+    useNavigate();
+
+  /* =========================
+     GET PARAMS
+  ========================= */
+
+  const { merchantId } =
     useParams();
-
-  const merchantId =
-    params.id;
-
-  console.log(
-    "Merchant ID:",
-    merchantId
-  );
 
   /* =========================
      STATES
@@ -62,15 +64,12 @@ function RestaurantDetails() {
         const response =
           await axios.get(
 
-            `http://localhost:5000/api/food/foods/${merchantId}`
+            `http://localhost:5000/api/merchant-food/foods/${merchantId}`
           );
 
-        console.log(
-          response.data
-        );
-
         setFoods(
-          response.data.foods
+
+          response.data.foods || []
         );
 
       } catch (error) {
@@ -86,84 +85,175 @@ function RestaurantDetails() {
       }
     };
 
+  /* =========================
+     ADD TO CART
+  ========================= */
+
+  const addToCart =
+    (food) => {
+
+      let cart =
+        JSON.parse(
+
+          localStorage.getItem("cart")
+        ) || [];
+
+      const existingFood =
+        cart.find(
+
+          (item) =>
+            item._id === food._id
+        );
+
+      if (existingFood) {
+
+        existingFood.quantity += 1;
+
+      } else {
+
+        cart.push({
+
+          ...food,
+
+          quantity: 1
+        });
+      }
+
+      localStorage.setItem(
+
+        "cart",
+
+        JSON.stringify(cart)
+      );
+
+      alert(
+        "Food Added To Cart"
+      );
+
+      navigate("/cart");
+    };
+
   return (
 
-    <div
-      style={{
-        padding: "40px"
-      }}
-    >
+    <div className="restaurant-details-page">
 
-      <h1>
-        Restaurant Foods
-      </h1>
+      {/* HEADER */}
+
+      <div className="restaurant-header">
+
+        <h1>
+          Restaurant Foods
+        </h1>
+
+        <p>
+          Explore delicious meals
+        </p>
+
+      </div>
+
+      {/* FOODS */}
 
       {
 
         loading ? (
 
-          <h2>
-            Loading...
-          </h2>
+          <div className="loading">
+
+            <h2>
+              Loading Foods...
+            </h2>
+
+          </div>
 
         ) : foods.length === 0 ? (
 
-          <h2>
-            No Foods Available
-          </h2>
+          <div className="empty-foods">
+
+            <h2>
+              No Foods Available
+            </h2>
+
+          </div>
 
         ) : (
 
-          foods.map((food) => (
+          <div className="food-grid">
 
-            <div
+            {
 
-              key={food._id}
+              foods.map((food) => (
 
-              style={{
-                background: "white",
-                padding: "20px",
-                marginBottom: "20px",
-                borderRadius: "12px"
-              }}
-            >
+                <div
 
-              <img
+                  className="food-card"
 
-                src={
-                  food.image
+                  key={food._id}
+                >
 
-                  ? `http://localhost:5000${food.image}`
+                  {/* IMAGE */}
 
-                  : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200&auto=format&fit=crop"
-                }
+                  <img
 
-                alt={food.name}
+                    src={
 
-                style={{
-                  width: "300px",
-                  borderRadius: "10px"
-                }}
-              />
+                      food.image
 
-              <h2>
-                {food.name}
-              </h2>
+                      ? `http://localhost:5000${food.image}`
 
-              <p>
-                {food.category}
-              </p>
+                      : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200&auto=format&fit=crop"
+                    }
 
-              <p>
-                {food.description}
-              </p>
+                    alt={food.name}
+                  />
 
-              <h3>
-                ₹ {food.price}
-              </h3>
+                  {/* DETAILS */}
 
-            </div>
-          ))
+                  <div className="food-info">
+
+                    <h3>
+                      {food.name}
+                    </h3>
+
+                    <p className="food-category">
+
+                      {food.category}
+
+                    </p>
+
+                    <p className="food-description">
+
+                      {food.description}
+
+                    </p>
+
+                    <div className="food-bottom">
+
+                      <span>
+
+                        ₹ {food.price}
+
+                      </span>
+
+                      <button
+
+                        onClick={() =>
+                          addToCart(food)
+                        }
+                      >
+
+                        Add To Cart
+
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                </div>
+              ))
+            }
+
+          </div>
         )
       }
 
