@@ -4,18 +4,6 @@ import axios from "axios";
 import Header from "../../components/customer/Header";
 import "./Home.css";
 
-/* ── helpers ── */
-const CATEGORIES = [
-  { emoji: "🍕", label: "Pizza" },
-  { emoji: "🍣", label: "Sushi" },
-  { emoji: "🥗", label: "Healthy" },
-  { emoji: "🍜", label: "Noodles" },
-  { emoji: "🥐", label: "Bakery" },
-  { emoji: "🍔", label: "Burgers" },
-  { emoji: "🍛", label: "Indian" },
-  { emoji: "🧁", label: "Desserts" },
-];
-
 const STATS = [
   { value: "200+", label: "Restaurants" },
   { value: "50K+", label: "Happy diners" },
@@ -23,11 +11,23 @@ const STATS = [
   { value: "30min", label: "Avg delivery" },
 ];
 
+const CAT_EMOJI = {
+  pizza: "🍕", sushi: "🍣", healthy: "🥗", salad: "🥗",
+  noodles: "🍜", pasta: "🍝", bakery: "🥐", burgers: "🍔",
+  burger: "🍔", indian: "🍛", desserts: "🧁", dessert: "🧁",
+  chinese: "🥡", mexican: "🌮", thai: "🍲", bbq: "🍖",
+  seafood: "🦞", vegan: "🌱", sandwich: "🥪", coffee: "☕",
+  default: "🍽",
+};
+const getEmoji = (label = "") =>
+  CAT_EMOJI[label.toLowerCase()] || CAT_EMOJI.default;
+
 function StarRating({ rating = 0 }) {
+  const r = Math.round(rating);
   return (
     <span className="stars">
-      {"★".repeat(Math.round(rating))}{"☆".repeat(5 - Math.round(rating))}
-      <em>{rating.toFixed(1)}</em>
+      {"★".repeat(r)}{"☆".repeat(5 - r)}
+      <em>{Number(rating).toFixed(1)}</em>
     </span>
   );
 }
@@ -43,40 +43,32 @@ function RestaurantCard({ r, onBook }) {
       <div className="r-card__img">
         {img
           ? <img src={img} alt={r.name} loading="lazy" />
-          : <span className="r-card__img-placeholder">🍽</span>
-        }
+          : <span className="r-card__img-placeholder">🍽</span>}
         {r.isOpen !== false && <span className="badge badge--open">Open</span>}
         {r.deliveryTime && <span className="badge badge--time">🕐 {r.deliveryTime}</span>}
       </div>
-
       <div className="r-card__body">
         <div className="r-card__top">
           <h3>{r.name}</h3>
           <StarRating rating={r.rating || r.averageRating || 4.2} />
         </div>
-
         {cuisines.length > 0 && (
           <p className="r-card__cuisines">{cuisines.slice(0, 3).join(" · ")}</p>
         )}
-
         {menus.length > 0 && (
           <div className="r-card__menu">
             {menus.map((item, i) => (
               <span key={i} className="menu-chip">
-                {item.name} {item.price ? `₹${item.price}` : ""}
+                {item.name}{item.price ? ` ₹${item.price}` : ""}
               </span>
             ))}
           </div>
         )}
-
         <div className="r-card__footer">
           <span className="r-card__delivery">
             {r.deliveryFee ? `₹${r.deliveryFee} delivery` : "Free delivery"}
           </span>
-          <button
-            className="btn-book"
-            onClick={(e) => { e.stopPropagation(); onBook(r); }}
-          >
+          <button className="btn-book" onClick={e => { e.stopPropagation(); onBook(r); }}>
             Reserve Table
           </button>
         </div>
@@ -89,7 +81,6 @@ function BookingModal({ restaurant, onClose }) {
   const [form, setForm] = useState({ date: "", time: "", guests: 2, note: "" });
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const submit = async () => {
@@ -102,11 +93,8 @@ function BookingModal({ restaurant, onClose }) {
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       setDone(true);
-    } catch {
-      setDone(true); // show success even if endpoint not yet wired
-    } finally {
-      setLoading(false);
-    }
+    } catch { setDone(true); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -127,11 +115,13 @@ function BookingModal({ restaurant, onClose }) {
             </div>
             <div className="modal__fields">
               <label>Date
-                <input type="date" value={form.date} min={new Date().toISOString().split("T")[0]}
+                <input type="date" value={form.date}
+                  min={new Date().toISOString().split("T")[0]}
                   onChange={e => set("date", e.target.value)} />
               </label>
               <label>Time
-                <input type="time" value={form.time} onChange={e => set("time", e.target.value)} />
+                <input type="time" value={form.time}
+                  onChange={e => set("time", e.target.value)} />
               </label>
               <label>Guests
                 <select value={form.guests} onChange={e => set("guests", +e.target.value)}>
@@ -143,8 +133,8 @@ function BookingModal({ restaurant, onClose }) {
                   value={form.note} onChange={e => set("note", e.target.value)} />
               </label>
             </div>
-            <button className="btn-primary" disabled={loading || !form.date || !form.time}
-              onClick={submit}>
+            <button className="btn-primary"
+              disabled={loading || !form.date || !form.time} onClick={submit}>
               {loading ? "Booking…" : "Confirm Reservation"}
             </button>
           </>
@@ -154,7 +144,6 @@ function BookingModal({ restaurant, onClose }) {
   );
 }
 
-/* ── Main ── */
 export default function Home() {
   const [restaurants, setRestaurants] = useState([]);
   const [filtered, setFiltered]       = useState([]);
@@ -177,33 +166,40 @@ export default function Home() {
       const list = data.restaurants || [];
       setRestaurants(list);
       setFiltered(list);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
-  const handleSearch = (q) => {
-    setSearch(q);
-    filter(q, activeCategory);
-  };
+  // Derive categories dynamically from restaurant cuisineType arrays
+  const categories = [
+    ...new Set(
+      restaurants.flatMap(r => r.cuisineType || r.cuisine || [])
+    )
+  ].filter(Boolean).slice(0, 12);
+
+  const handleSearch = (q) => { setSearch(q); applyFilter(q, activeCategory); };
 
   const handleCategory = (cat) => {
     const next = activeCategory === cat ? "" : cat;
     setActiveCat(next);
-    filter(search, next);
+    applyFilter(search, next);
   };
 
-  const filter = (q, cat) => {
+  const applyFilter = (q, cat) => {
     let list = restaurants;
     if (q) list = list.filter(r =>
       r.name?.toLowerCase().includes(q.toLowerCase()) ||
-      r.cuisineType?.some(c => c.toLowerCase().includes(q.toLowerCase()))
+      (r.cuisineType || r.cuisine || []).some(c =>
+        c.toLowerCase().includes(q.toLowerCase())
+      )
     );
     if (cat) list = list.filter(r =>
-      r.cuisineType?.some(c => c.toLowerCase().includes(cat.toLowerCase())) ||
-      r.menuItems?.some(m => m.name?.toLowerCase().includes(cat.toLowerCase()))
+      (r.cuisineType || r.cuisine || []).some(c =>
+        c.toLowerCase().includes(cat.toLowerCase())
+      ) ||
+      (r.menuItems || r.menu || []).some(m =>
+        m.name?.toLowerCase().includes(cat.toLowerCase())
+      )
     );
     setFiltered(list);
   };
@@ -212,58 +208,72 @@ export default function Home() {
     <div className={`home ${mounted ? "home--in" : ""}`}>
       <Header />
 
-      {/* ── HERO ── */}
+      {/* HERO */}
       <section className="hero">
-        <div className="hero__text">
-          <h1>
-            Great food,<br />
-            <em>right at your door.</em>
-          </h1>
-          <p>Order delivery, dine-in, or book a table — all in one place.</p>
-          <div className="hero__search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" strokeLinecap="round"/>
-            </svg>
-            <input
-              placeholder="Search restaurants, cuisines…"
-              value={search}
-              onChange={e => handleSearch(e.target.value)}
-            />
+        <div className="floating-foods" aria-hidden="true">
+          {["🍕","🍣","🍔","🌮","🥗","🍜","🧁","🍛"].map((e, i) => (
+            <span key={i} className="food-bubble" style={{ "--i": i }}>{e}</span>
+          ))}
+        </div>
+        <div className="hero__content">
+          <div className="hero__text">
+            <div className="hero__badge">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              The #1 food & dining platform
+            </div>
+            <h1>
+              Great food,<br />
+              <em>right at your door.</em>
+            </h1>
+            <p>Order delivery, dine-in, or book a table — all in one place.</p>
+            <div className="hero__search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" strokeLinecap="round"/>
+              </svg>
+              <input
+                placeholder="Search restaurants, cuisines…"
+                value={search}
+                onChange={e => handleSearch(e.target.value)}
+              />
+              {search && <button className="hero__search-clear" onClick={() => handleSearch("")}>✕</button>}
+            </div>
+          </div>
+          <div className="hero__stats">
+            {STATS.map(s => (
+              <div key={s.label} className="hero__stat">
+                <strong>{s.value}</strong>
+                <span>{s.label}</span>
+              </div>
+            ))}
           </div>
         </div>
-        <div className="hero__stats">
-          {STATS.map(s => (
-            <div key={s.label} className="hero__stat">
-              <strong>{s.value}</strong>
-              <span>{s.label}</span>
-            </div>
-          ))}
-        </div>
       </section>
 
-      {/* ── CATEGORIES ── */}
-      <section className="section">
-        <h2 className="section__title">What are you craving?</h2>
-        <div className="categories">
-          {CATEGORIES.map(c => (
-            <button
-              key={c.label}
-              className={`cat-chip ${activeCategory === c.label ? "cat-chip--active" : ""}`}
-              onClick={() => handleCategory(c.label)}
-            >
-              <span>{c.emoji}</span>{c.label}
-            </button>
-          ))}
-        </div>
-      </section>
+      {/* CATEGORIES — derived from real restaurant data */}
+      {categories.length > 0 && (
+        <section className="section">
+          <h2 className="section__title">What are you craving?</h2>
+          <div className="categories">
+            {categories.map(c => (
+              <button
+                key={c}
+                className={`cat-chip ${activeCategory === c ? "cat-chip--active" : ""}`}
+                onClick={() => handleCategory(c)}
+              >
+                <span>{getEmoji(c)}</span>{c}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* ── RESTAURANTS ── */}
+      {/* RESTAURANTS */}
       <section className="section">
         <div className="section__head">
           <h2 className="section__title">
             {activeCategory ? `${activeCategory} spots` : "Top Restaurants"}
           </h2>
-          {filtered.length > 0 && (
+          {!loading && filtered.length > 0 && (
             <span className="section__count">{filtered.length} found</span>
           )}
         </div>
@@ -287,7 +297,7 @@ export default function Home() {
         )}
       </section>
 
-      {/* ── ADDRESS STRIP ── */}
+      {/* FOOTER */}
       <footer className="address-strip">
         <div className="address-strip__inner">
           <span className="address-strip__logo">OmniRetail</span>
@@ -303,9 +313,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {booking && (
-        <BookingModal restaurant={booking} onClose={() => setBooking(null)} />
-      )}
+      {booking && <BookingModal restaurant={booking} onClose={() => setBooking(null)} />}
     </div>
   );
 }

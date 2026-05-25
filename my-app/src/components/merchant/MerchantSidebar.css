@@ -1,31 +1,150 @@
-.merchant-sidebar{
-  width:260px;
-  background:#111827;
-  color:white;
-  padding:25px;
+/* ============================================================
+   MERCHANT SIDEBAR — OmniRetail | Syne × Jakarta Sans
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+.ms {
+  width: 262px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0d0d14 0%, #130a1e 55%, #0a0f1a 100%);
+  display: flex;
+  flex-direction: column;
+  padding: 26px 16px 24px;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(255,107,43,.1);
+  position: relative;
+  overflow: hidden;
 }
 
-.merchant-sidebar h2{
-  margin-bottom:40px;
+/* purple glow top */
+.ms::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 260px;
+  background: radial-gradient(ellipse 90% 60% at 50% 0%, rgba(124,58,237,.22) 0%, transparent 70%);
+  pointer-events: none;
+}
+/* orange glow bottom */
+.ms::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 180px;
+  background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(255,107,43,.1) 0%, transparent 70%);
+  pointer-events: none;
 }
 
-.merchant-sidebar ul{
-  list-style:none;
-  padding:0;
+/* ── BRAND ── */
+.ms__brand {
+  display: flex; align-items: center; gap: 11px;
+  padding: 0 8px; margin-bottom: 22px; position: relative; z-index: 1;
+}
+.ms__brand-icon {
+  width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
+  background: linear-gradient(135deg,#ff6b2b,#ff3b7a,#7c3aed);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne',sans-serif; font-size: 1.15rem; font-weight: 800; color: #fff;
+  box-shadow: 0 6px 20px rgba(255,107,43,.35);
+}
+.ms__brand-name {
+  display: block; font-family: 'Syne',sans-serif; font-size: 1rem; font-weight: 800;
+  background: linear-gradient(135deg,#ff9f1c,#ff6b2b);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.ms__brand-sub {
+  display: block; font-size: .66rem; color: rgba(255,255,255,.3);
+  font-family: 'Plus Jakarta Sans',sans-serif; letter-spacing: .05em; margin-top: 1px;
 }
 
-.merchant-sidebar li{
-  padding:14px;
-  margin-bottom:10px;
-  border-radius:10px;
-  cursor:pointer;
-  transition:0.3s;
+/* ── MERCHANT PILL ── */
+.ms__merchant {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 14px; padding: 12px 13px;
+  margin-bottom: 22px; position: relative; z-index: 1;
+}
+.ms__avatar {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg,#ff6b2b,#7c3aed);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne',sans-serif; font-weight: 800; color: #fff; font-size: .88rem;
+}
+.ms__merchant-info { flex: 1; min-width: 0; }
+.ms__merchant-name {
+  font-family: 'Plus Jakarta Sans',sans-serif; font-size: .83rem;
+  font-weight: 600; color: #fff; margin: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ms__merchant-role { font-size: .66rem; color: rgba(255,255,255,.35); font-family: 'Plus Jakarta Sans',sans-serif; margin: 2px 0 0; }
+.ms__online {
+  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  background: #06d6a0; box-shadow: 0 0 8px rgba(6,214,160,.7);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+/* ── SECTION LABEL ── */
+.ms__section-label {
+  font-family: 'Plus Jakarta Sans',sans-serif;
+  font-size: .63rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(255,255,255,.22); padding: 0 10px; margin-bottom: 6px;
+  position: relative; z-index: 1;
 }
 
-.merchant-sidebar li:hover{
-  background:#1f2937;
+/* ── NAV ── */
+.ms__nav { display: flex; flex-direction: column; gap: 3px; flex: 1; position: relative; z-index: 1; }
+
+.ms__item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 13px; border-radius: 12px; border: 1px solid transparent;
+  background: transparent; color: rgba(255,255,255,.45);
+  font-family: 'Plus Jakarta Sans',sans-serif; font-size: .85rem; font-weight: 500;
+  cursor: pointer; transition: all .18s; text-align: left; width: 100%;
+}
+.ms__item:hover {
+  background: rgba(255,255,255,.07);
+  color: rgba(255,255,255,.8);
+}
+.ms__item--active {
+  background: linear-gradient(135deg,rgba(255,107,43,.16),rgba(124,58,237,.13));
+  border-color: rgba(255,107,43,.22); color: #fff;
+  box-shadow: inset 0 0 0 0 transparent;
+}
+.ms__item--ghost { color: rgba(255,255,255,.35); }
+.ms__item--ghost:hover { color: rgba(255,255,255,.6); }
+
+.ms__icon { font-size: 1.05rem; width: 20px; text-align: center; flex-shrink: 0; }
+.ms__label { flex: 1; }
+
+.ms__dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg,#ff6b2b,#ff3b7a);
+}
+.ms__badge {
+  font-size: .6rem; font-weight: 700; padding: 2px 8px; border-radius: 100px;
+  background: linear-gradient(135deg,#ff6b2b,#ff3b7a);
+  color: #fff; letter-spacing: .04em; flex-shrink: 0;
 }
 
-.merchant-sidebar li.active{
-  background:#2563eb;
+/* ── DIVIDER ── */
+.ms__divider {
+  height: 1px; background: rgba(255,255,255,.07);
+  margin: 10px 0; position: relative; z-index: 1;
 }
+
+/* ── BOTTOM ── */
+.ms__bottom {
+  display: flex; flex-direction: column; gap: 3px;
+  position: relative; z-index: 1;
+}
+
+.ms__logout {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 13px; border-radius: 12px; margin-top: 4px;
+  background: rgba(220,38,38,.08); border: 1px solid rgba(220,38,38,.15);
+  color: #f87171; font-family: 'Plus Jakarta Sans',sans-serif;
+  font-size: .85rem; font-weight: 600; cursor: pointer;
+  transition: all .18s; width: 100%; text-align: left;
+}
+.ms__logout:hover { background: rgba(220,38,38,.18); color: #fca5a5; border-color: rgba(220,38,38,.3); }

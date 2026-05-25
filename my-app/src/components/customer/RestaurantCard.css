@@ -1,101 +1,207 @@
-/* ============================================================
-   RESTAURANTCARD.CSS — Foodie  |  Olive × Cream × Amber
-   ============================================================ */
-
 .rc {
-  background: var(--white, #fff);
+  background: #fff;
   border-radius: 16px;
-  border: 1px solid var(--border, rgba(74,82,64,.15));
-  box-shadow: 0 2px 8px rgba(28,31,26,.07);
   overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  transition: transform .2s ease, box-shadow .2s ease;
-}
-.rc:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 36px rgba(28,31,26,.13);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ── image ── */
+.rc:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+}
+
+/* ── Image ── */
 .rc__img {
   position: relative;
-  height: 176px;
-  background: #ede5d5;
+  height: 180px;
   overflow: hidden;
 }
+
 .rc__img img {
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  transition: transform .35s ease;
+  transition: transform 0.4s ease;
 }
-.rc:hover .rc__img img { transform: scale(1.05); }
 
-.rc__badge {
-  position: absolute; top: 10px; left: 10px;
-  padding: 4px 10px; border-radius: 100px;
-  font-size: .68rem; font-weight: 700;
-  letter-spacing: .04em;
+.rc:hover .rc__img img {
+  transform: scale(1.05);
 }
-.rc__badge--open   { background: #edf7ee; color: #2d8a3e; }
-.rc__badge--closed { background: #fef0ee; color: #c0392b; }
 
-/* ── body ── */
-.rc__body { padding: 16px; }
-
-.rc__row {
+/* ── Status badge ── */
+.rc__status {
+  position: absolute;
+  top: 12px;
+  right: 12px;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 4px;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
 }
 
+.rc__status--open {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.rc__status--closed {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.rc__status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rc__status--open .rc__status-dot {
+  background: #10b981;
+  animation: pulse 1.8s infinite;
+}
+
+.rc__status--closed .rc__status-dot {
+  background: #ef4444;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.4); }
+}
+
+/* ── Body ── */
+.rc__body {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+/* ── Restaurant Name — hero element ── */
 .rc__name {
-  font-family: 'Playfair Display', serif;
-  font-size: 1rem; font-weight: 700;
-  color: #1c1f1a;
-  line-height: 1.3;
+  font-size: 1.18rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Cuisine ── */
+.rc__cuisine {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+  margin: 0;
+}
+
+.rc__cuisine-icon {
+  font-size: 0.9rem;
+}
+
+/* ── Timing block ── */
+.rc__timing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 9px 12px;
+  margin-top: 2px;
+}
+
+.rc__timing-icon svg {
+  width: 16px;
+  height: 16px;
+  color: #f97316;
+  flex-shrink: 0;
+}
+
+.rc__timing-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.rc__timing-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+}
+
+.rc__timing-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1f2937;
+  letter-spacing: 0.01em;
+}
+
+/* ── Address ── */
+.rc__address {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.rc__address svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #9ca3af;
+}
+
+/* ── Footer ── */
+.rc__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #f3f4f6;
 }
 
 .rc__rating {
-  font-size: .78rem; font-weight: 600;
-  color: #c8863a; white-space: nowrap;
-  margin-left: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #374151;
 }
-
-.rc__cuisine {
-  font-size: .76rem; color: #7a8272;
-  margin-bottom: 8px;
-}
-
-.rc__address {
-  display: flex; align-items: flex-start; gap: 5px;
-  font-size: .78rem; color: #7a8272;
-  margin-bottom: 12px; line-height: 1.4;
-}
-.rc__address svg {
-  width: 13px; height: 13px;
-  color: #c8863a; flex-shrink: 0;
-  margin-top: 1px;
-}
-
-/* ── footer ── */
-.rc__footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 10px;
-  border-top: 1px solid #ede5d5;
-}
-
-.rc__time {
-  display: flex; align-items: center; gap: 5px;
-  font-size: .75rem; color: #7a8272;
-}
-.rc__time svg { width: 13px; height: 13px; flex-shrink: 0; }
 
 .rc__cta {
-  font-size: .75rem; font-weight: 600;
-  color: #4a5240;
-  transition: color .18s;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #f97316;
+  letter-spacing: 0.02em;
+  transition: gap 0.2s;
 }
-.rc:hover .rc__cta { color: #c8863a; }
+
+.rc:hover .rc__cta {
+  letter-spacing: 0.06em;
+}
