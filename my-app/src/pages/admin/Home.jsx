@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "./Home.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function Home() {
   const [stats, setStats] = useState({
     totalMerchants:    0,
@@ -19,8 +21,8 @@ function Home() {
   const fetchStats = async () => {
     try {
       const [merchantRes, customerRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/admin/merchants"),
-        axios.get("http://localhost:5000/api/admin/customers"),
+        axios.get(`${API_URL}/api/admin/merchants`),
+        axios.get(`${API_URL}/api/admin/customers`),
       ]);
 
       const merchants = merchantRes.data;
@@ -43,13 +45,13 @@ function Home() {
   };
 
   const CARDS = [
-    { label: "Total Merchants",    value: stats.totalMerchants,    color: "orange", icon: <StoreIcon /> },
-    { label: "Total Customers",    value: stats.totalCustomers,    color: "purple", icon: <UsersIcon /> },
-    { label: "Active Merchants",   value: stats.activeMerchants,   color: "green",  icon: <ActiveIcon /> },
-    { label: "Pending Approval",   value: stats.pendingMerchants,  color: "amber",  icon: <ClockIcon /> },
-    { label: "Blocked Merchants",  value: stats.blockedMerchants,  color: "red",    icon: <BlockIcon /> },
-    { label: "Blocked Customers",  value: stats.blockedCustomers,  color: "rose",   icon: <UserBlockIcon /> },
-    { label: "Rejected",           value: stats.rejectedMerchants, color: "gray",   icon: <XIcon /> },
+    { label: "Total Merchants",   value: stats.totalMerchants,    color: "orange", icon: <StoreIcon /> },
+    { label: "Total Customers",   value: stats.totalCustomers,    color: "purple", icon: <UsersIcon /> },
+    { label: "Active Merchants",  value: stats.activeMerchants,   color: "green",  icon: <ActiveIcon /> },
+    { label: "Pending Approval",  value: stats.pendingMerchants,  color: "amber",  icon: <ClockIcon /> },
+    { label: "Blocked Merchants", value: stats.blockedMerchants,  color: "red",    icon: <BlockIcon /> },
+    { label: "Blocked Customers", value: stats.blockedCustomers,  color: "rose",   icon: <UserBlockIcon /> },
+    { label: "Rejected",          value: stats.rejectedMerchants, color: "gray",   icon: <XIcon /> },
   ];
 
   return (

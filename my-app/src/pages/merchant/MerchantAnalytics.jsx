@@ -6,7 +6,6 @@ import {
 } from "recharts";
 import "./MerchantAnalytics.css";
 
-/* ── libs loaded via CDN in index.html or dynamic import ── */
 const MON_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAY_LABELS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
@@ -19,6 +18,8 @@ const STATUS_COLOR = {
 };
 
 const PIE_COLORS = ["#3b82f6","#f59e0b","#7c3aed","#22c55e","#ef4444"];
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 /* ── tooltip ── */
 const CustomTooltip = ({ active, payload, label }) => {
@@ -173,7 +174,6 @@ async function exportExcel(orders, stats, merchantName) {
 
   const wb = XLSX.utils.book_new();
 
-  /* Summary sheet */
   const summaryRows = [
     ["Metric", "Value"],
     ["Restaurant", merchantName || "—"],
@@ -187,7 +187,6 @@ async function exportExcel(orders, stats, merchantName) {
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryRows), "Summary");
 
-  /* Orders sheet */
   const orderRows = [
     ["Order ID","Customer","Phone","Address","Items","Amount","Payment Method","Payment Status","Order Status","Date"],
     ...orders.map(o => [
@@ -205,7 +204,6 @@ async function exportExcel(orders, stats, merchantName) {
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(orderRows), "Orders");
 
-  /* Top Items sheet */
   const itemMap = {};
   orders.forEach(o => {
     (o.items || []).forEach(item => {
@@ -250,7 +248,7 @@ export default function MerchantAnalytics() {
       setMerchantName(user?.restaurantName || user?.name || "Restaurant");
 
       const { data } = await axios.get(
-        `http://localhost:5000/api/orders/merchant/${merchantId}`
+        `${API_URL}/api/orders/merchant/${merchantId}`
       );
       const all = data.orders || [];
       setOrders(all);

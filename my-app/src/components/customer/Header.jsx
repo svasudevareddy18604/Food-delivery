@@ -86,7 +86,6 @@ function CartIcon() {
   const navigate = useNavigate();
   const [count, setCount] = useState(0);
 
-  /* re-read localStorage on every focus/storage event */
   const sync = () => {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     setCount(cart.reduce((s, i) => s + (i.quantity || 1), 0));
@@ -96,7 +95,6 @@ function CartIcon() {
     sync();
     window.addEventListener("storage", sync);
     window.addEventListener("focus", sync);
-    /* custom event fired by RestaurantDetails after addToCart */
     window.addEventListener("cart-updated", sync);
     return () => {
       window.removeEventListener("storage", sync);
@@ -119,9 +117,9 @@ function CartIcon() {
 /* ── Header ── */
 export default function Header() {
   const navigate = useNavigate();
-  const [user, setUser]       = useState(null);
+  const [user, setUser]         = useState(null);
   const [location, setLocation] = useState(null);
-  const [showLoc, setShowLoc] = useState(false);
+  const [showLoc, setShowLoc]   = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef();
 
@@ -156,20 +154,26 @@ export default function Header() {
   return (
     <>
       <header className="header">
-        {/* Brand */}
+
+        {/* ── Brand ── */}
         <div className="header__brand" onClick={() => navigate("/")}>
           <span className="header__logo">🍽</span>
           <span className="header__name">Foodie</span>
         </div>
 
-        {/* Location pill */}
+        {/* ── Location pill ── */}
         <button className="header__loc" onClick={() => setShowLoc(true)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+            <circle cx="12" cy="9" r="2.5"/>
+          </svg>
           <span>{location ? location.label : "Set location"}</span>
-          <svg className="header__loc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6" strokeLinecap="round"/></svg>
+          <svg className="header__loc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M6 9l6 6 6-6" strokeLinecap="round"/>
+          </svg>
         </button>
 
-        {/* Right side */}
+        {/* ── Right ── */}
         <div className="header__right">
           <CartIcon />
 
@@ -193,7 +197,9 @@ export default function Header() {
           ) : (
             <button className="header__login" onClick={() => navigate("/login")}>
               Sign in
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
           )}
         </div>

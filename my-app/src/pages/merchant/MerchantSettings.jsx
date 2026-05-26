@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import "./MerchantSettings.css";
 
-const API = "http://localhost:5000/api/merchant-settings";
+const API_URL = import.meta.env.VITE_API_URL;
+const API = `${API_URL}/api/merchant-settings`;
 
 const TYPE_OPTIONS = [
   { value: "veg",    label: "🌿 Pure Veg" },
@@ -17,26 +18,25 @@ function formatTime(t) {
 }
 
 function Avatar({ src, name }) {
-  if (src) return <img src={`http://localhost:5000${src}`} alt={name} className="ms-avatar__img" />;
+  if (src) return <img src={`${API_URL}${src}`} alt={name} className="ms-avatar__img" />;
   const initials = (name || "R").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return <div className="ms-avatar__fallback">{initials}</div>;
 }
 
 export default function MerchantSettings() {
-  const user        = JSON.parse(localStorage.getItem("user") || "{}");
-  const fileRef     = useRef();
+  const user    = JSON.parse(localStorage.getItem("user") || "{}");
+  const fileRef = useRef();
 
-  const [merchant, setMerchant]   = useState(null);
-  const [loading, setLoading]     = useState(true);
-  const [saving, setSaving]       = useState(false);
-  const [toggling, setToggling]   = useState(false);
-  const [editing, setEditing]     = useState(false);
-  const [success, setSuccess]     = useState("");
-  const [error, setError]         = useState("");
+  const [merchant, setMerchant] = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
+  const [toggling, setToggling] = useState(false);
+  const [editing, setEditing]   = useState(false);
+  const [success, setSuccess]   = useState("");
+  const [error, setError]       = useState("");
 
-  /* Edit form state */
-  const [form, setForm]     = useState({});
-  const [imgFile, setImg]   = useState(null);
+  const [form, setForm]       = useState({});
+  const [imgFile, setImg]     = useState(null);
   const [preview, setPreview] = useState(null);
 
   /* ── Fetch merchant data ── */
@@ -108,7 +108,7 @@ export default function MerchantSettings() {
     setEditing(false);
   };
 
-  /* ────────────── LOADING ────────────── */
+  /* ── Loading ── */
   if (loading) return (
     <div className="ms-loading">
       <div className="ms-spinner" />
@@ -124,7 +124,7 @@ export default function MerchantSettings() {
 
   const typeLabel = TYPE_OPTIONS.find(t => t.value === merchant.restaurantType)?.label || merchant.restaurantType || "—";
 
-  /* ────────────── RENDER ────────────── */
+  /* ── Render ── */
   return (
     <div className="ms-wrap">
 
@@ -272,7 +272,7 @@ export default function MerchantSettings() {
           >
             {(preview || merchant.restaurantImage) ? (
               <img
-                src={preview || `http://localhost:5000${merchant.restaurantImage}`}
+                src={preview || `${API_URL}${merchant.restaurantImage}`}
                 alt="Preview"
                 className="ms-img-upload__preview"
               />

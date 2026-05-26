@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import Header from "../../components/customer/Header";
 import "./OrderSuccess.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const FOOD_EMOJI = ["🍕","🍔","🍜","🌮","🍣","🥗","🍛","🥘","🍱","🫕"];
 const emoji = (name = "") => FOOD_EMOJI[name.charCodeAt(0) % FOOD_EMOJI.length];
 
@@ -23,7 +25,7 @@ export default function OrderSuccess() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/orders/${orderId}`)
+    fetch(`${API_URL}/api/orders/${orderId}`)
       .then((r) => r.json())
       .then((d) => { if (d.success) setOrder(d.order); else setError(d.message); })
       .catch(() => setError("Failed to load order."))

@@ -8,6 +8,8 @@ const RESTAURANT_TYPES = [
   { value: "both",   label: "🍽 Veg & Non Veg" },
 ];
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function MerchantRegistration() {
   const navigate = useNavigate();
 
@@ -19,10 +21,10 @@ export default function MerchantRegistration() {
     openingTime:       "",
     closingTime:       "",
   });
-  const [image, setImage]       = useState(null);
-  const [preview, setPreview]   = useState(null);
-  const [loading, setLoading]   = useState(false);
-  const [errors, setErrors]     = useState({});
+  const [image, setImage]     = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors]   = useState({});
 
   const set = (k, v) => {
     setForm(p => ({ ...p, [k]: v }));
@@ -57,14 +59,13 @@ export default function MerchantRegistration() {
     try {
       setLoading(true);
 
-      /* Use FormData so the image file travels with the text fields */
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => fd.append(k, v));
       if (image) fd.append("restaurantImage", image);
 
       const res = await fetch(
-        `http://localhost:5000/api/merchant/register/${user._id}`,
-        { method: "PUT", body: fd }   // no Content-Type header — browser sets it with boundary
+        `${API_URL}/api/merchant/register/${user._id}`,
+        { method: "PUT", body: fd }
       );
 
       const data = await res.json();

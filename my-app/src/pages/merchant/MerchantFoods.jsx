@@ -4,10 +4,12 @@ import "./MerchantFoods.css";
 
 const EMPTY_FORM = { name: "", category: "", price: "", stock: "", description: "", available: true, image: null };
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function MerchantFoods() {
   const [foods, setFoods]       = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [editFood, setEditFood] = useState(null);   // null = add mode, object = edit mode
+  const [editFood, setEditFood] = useState(null);
   const [foodData, setFoodData] = useState(EMPTY_FORM);
   const [loading, setLoading]   = useState(false);
 
@@ -16,7 +18,7 @@ export default function MerchantFoods() {
   const fetchFoods = async () => {
     try {
       const id = localStorage.getItem("merchantId");
-      const { data } = await axios.get(`http://localhost:5000/api/merchant-food/foods/${id}`);
+      const { data } = await axios.get(`${API_URL}/api/merchant-food/foods/${id}`);
       setFoods(data.foods || []);
     } catch (e) { console.error(e); }
   };
@@ -24,14 +26,12 @@ export default function MerchantFoods() {
   const set = (k, v) => setFoodData(p => ({ ...p, [k]: v }));
   const handleChange = e => set(e.target.name, e.target.value);
 
-  /* open Add modal */
   const openAdd = () => {
     setEditFood(null);
     setFoodData(EMPTY_FORM);
     setShowForm(true);
   };
 
-  /* open Edit modal — pre-fill with existing food data */
   const openEdit = (f) => {
     setEditFood(f);
     setFoodData({
@@ -41,7 +41,7 @@ export default function MerchantFoods() {
       stock:       f.stock,
       description: f.description || "",
       available:   f.available,
-      image:       null,   // only replace if user picks a new file
+      image:       null,
     });
     setShowForm(true);
   };
@@ -65,13 +65,13 @@ export default function MerchantFoods() {
 
       if (editFood) {
         await axios.put(
-          `http://localhost:5000/api/merchant-food/update-food/${editFood._id}`,
+          `${API_URL}/api/merchant-food/update-food/${editFood._id}`,
           fd,
           { headers: { "Content-Type": "multipart/form-data" } }
         );
       } else {
         await axios.post(
-          "http://localhost:5000/api/merchant-food/add-food",
+          `${API_URL}/api/merchant-food/add-food`,
           fd,
           { headers: { "Content-Type": "multipart/form-data" } }
         );
@@ -86,16 +86,15 @@ export default function MerchantFoods() {
   const deleteFood = async id => {
     if (!window.confirm("Delete this food item?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/merchant-food/delete-food/${id}`);
+      await axios.delete(`${API_URL}/api/merchant-food/delete-food/${id}`);
       fetchFoods();
     } catch (e) { console.error(e); }
   };
 
-  /* image preview — new file takes priority, else show existing */
   const previewSrc = foodData.image
     ? URL.createObjectURL(foodData.image)
     : editFood?.image
-      ? `http://localhost:5000${editFood.image}`
+      ? `${API_URL}${editFood.image}`
       : null;
 
   return (
@@ -173,7 +172,7 @@ export default function MerchantFoods() {
               </td></tr>
             ) : foods.map(f => (
               <tr key={f._id}>
-                <td><img src={`http://localhost:5000${f.image}`} alt={f.name} className="mf__thumb" /></td>
+                <td><img src={`${API_URL}${f.image}`} alt={f.name} className="mf__thumb" /></td>
                 <td className="mf__name">{f.name}</td>
                 <td><span className="mf__cat">{f.category}</span></td>
                 <td className="mf__price">₹{f.price}</td>

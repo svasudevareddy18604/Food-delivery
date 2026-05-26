@@ -35,7 +35,7 @@
   overflow: hidden;
   display: flex;
   align-items: center;
-  justify-content: center;
+  min-width: 0;
   mask-image: linear-gradient(
     to right,
     transparent 0%,
@@ -56,8 +56,10 @@
 .topbar__marquee {
   display: flex;
   gap: 80px;
-  animation: marquee 14s linear infinite;
+  width: max-content;
+  animation: marquee 18s linear infinite;
   white-space: nowrap;
+  will-change: transform;
 }
 
 .topbar__marquee span {
@@ -69,11 +71,12 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: 0.01em;
+  flex-shrink: 0;
 }
 
 @keyframes marquee {
   0%   { transform: translateX(0); }
-  100% { transform: translateX(calc(-50% - 40px)); }
+  100% { transform: translateX(-50%); }
 }
 
 /* ── RIGHT — status button ── */

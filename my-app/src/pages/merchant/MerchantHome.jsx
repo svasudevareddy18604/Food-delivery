@@ -66,6 +66,8 @@ const STATUS_COLOR = {
   CANCELLED:        "red",
 };
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function MerchantHome() {
   const [orders,  setOrders]  = useState([]);
   const [stats,   setStats]   = useState({});
@@ -85,7 +87,7 @@ export default function MerchantHome() {
       const merchantId = merchant?._id || localStorage.getItem("merchantId");
 
       const { data } = await axios.get(
-        `http://localhost:5000/api/orders/merchant/${merchantId}`
+        `${API_URL}/api/orders/merchant/${merchantId}`
       );
 
       const all = data.orders || [];

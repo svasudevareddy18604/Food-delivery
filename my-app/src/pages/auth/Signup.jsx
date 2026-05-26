@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import bgImage from "../../assets/background.png";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 let toastId = 0;
 
 function Toast({ toasts, removeToast }) {
@@ -41,7 +43,13 @@ function useToast() {
     setToasts((p) => p.map((t) => t.id === id ? { ...t, exiting: true } : t));
     setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 400);
   };
-  return { toasts, removeToast, success: (m,d) => addToast(m,"success",d), error: (m,d) => addToast(m,"error",d), info: (m,d) => addToast(m,"info",d) };
+  return {
+    toasts,
+    removeToast,
+    success: (m, d) => addToast(m, "success", d),
+    error:   (m, d) => addToast(m, "error",   d),
+    info:    (m, d) => addToast(m, "info",     d),
+  };
 }
 
 const FOOD_ICONS = ["🍕","🍣","🥗","🍜","🥐","🍓","🫐","🥩","🍷","🧁","🌮","🍔"];
@@ -64,22 +72,22 @@ function Signup() {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const [step, setStep]           = useState(1);
-  const [role, setRole]           = useState("");
-  const [name, setName]           = useState("");
-  const [email, setEmail]         = useState("");
-  const [password, setPassword]   = useState("");
-  const [confirm, setConfirm]     = useState("");
-  const [showPw, setShowPw]       = useState(false);
-  const [showCf, setShowCf]       = useState(false);
-  const [loading, setLoading]     = useState(false);
-  const [mounted, setMounted]     = useState(false);
+  const [step,     setStep]     = useState(1);
+  const [role,     setRole]     = useState("");
+  const [name,     setName]     = useState("");
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm,  setConfirm]  = useState("");
+  const [showPw,   setShowPw]   = useState(false);
+  const [showCf,   setShowCf]   = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [mounted,  setMounted]  = useState(false);
 
   useEffect(() => { setTimeout(() => setMounted(true), 50); }, []);
 
   const strength      = getStrength(password);
-  const strengthLabel = ["","Weak","Fair","Good","Strong"][strength];
-  const strengthClass = ["","weak","fair","good","strong"][strength];
+  const strengthLabel = ["", "Weak", "Fair", "Good", "Strong"][strength];
+  const strengthClass = ["", "weak", "fair", "good", "strong"][strength];
 
   const handleSignup = useCallback(async () => {
     if (!name || !email || !password || !confirm) { toast.error("Please fill in all fields."); return; }
@@ -89,7 +97,7 @@ function Signup() {
     try {
       setLoading(true);
       toast.info("Creating your account…", 2500);
-      await axios.post("http://localhost:5000/api/auth/signup", { name, email, password, role });
+      await axios.post(`${API_URL}/api/auth/signup`, { name, email, password, role });
       toast.success("Account created! Welcome 🎉");
       setTimeout(() => navigate("/login"), 1400);
     } catch (err) {
@@ -106,7 +114,7 @@ function Signup() {
         <div className="signup-left" style={{ backgroundImage: `url(${bgImage})` }}>
           <div className="left-overlay"/>
           <div className="floating-foods" aria-hidden="true">
-            {FOOD_ICONS.map((icon, i) => <span key={i} className="food-bubble" style={{"--i":i}}>{icon}</span>)}
+            {FOOD_ICONS.map((icon, i) => <span key={i} className="food-bubble" style={{ "--i": i }}>{icon}</span>)}
           </div>
           <div className="signup-left__content">
             <div className="brand">
@@ -118,11 +126,11 @@ function Signup() {
                   <path d="M16 14l4-4 4 4" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <span className="brand__name">OmniRetail</span>
+              <span className="brand__name">Foodie</span>
             </div>
             <div className="hero-text">
               <h1>Your table<br/><em>awaits you</em><br/>everywhere.</h1>
-              <p>Join thousands of food lovers, merchants, and delivery partners on OmniRetail.</p>
+              <p>Join thousands of food lovers, merchants, and delivery partners on Foodie.</p>
             </div>
             <div className="stat-pills">
               <div className="pill"><strong>50K+</strong><span>Happy Diners</span></div>
@@ -174,7 +182,7 @@ function Signup() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     Back
                   </button>
-                  <div className="card-badge" style={{marginTop:"14px"}}>
+                  <div className="card-badge" style={{ marginTop: "14px" }}>
                     <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm3.5 9.5l-4-2.5V5h1v2.7l3.5 2.1-.5.7z"/></svg>
                     {ROLES.find((r) => r.value === role)?.label} Account
                   </div>
@@ -246,7 +254,10 @@ function Signup() {
                 </div>
 
                 <button className={`cta-btn ${loading ? "cta-btn--loading" : ""}`} onClick={handleSignup} disabled={loading}>
-                  {loading ? <><span className="spinner"/>Creating account…</> : <>Create Account<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/></svg></>}
+                  {loading
+                    ? <><span className="spinner"/>Creating account…</>
+                    : <>Create Account<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/></svg></>
+                  }
                 </button>
                 <p className="foot-prompt">Already have an account? <Link to="/login">Sign in →</Link></p>
                 <p className="terms-note">By creating an account you agree to our <a href="/terms">Terms</a> &amp; <a href="/privacy">Privacy Policy</a>.</p>

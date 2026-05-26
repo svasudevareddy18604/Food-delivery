@@ -2,13 +2,15 @@ import "./AdminDashboard.css";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function AdminDashboard() {
   const [merchants, setMerchants] = useState([]);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter]       = useState("all");
 
   const fetchMerchants = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/merchants");
+      const response = await axios.get(`${API_URL}/api/admin/merchants`);
       setMerchants(response.data);
     } catch (error) {
       console.log(error);
@@ -17,7 +19,7 @@ function AdminDashboard() {
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/admin/approve/${id}`);
+      await axios.put(`${API_URL}/api/admin/approve/${id}`);
       fetchMerchants();
     } catch (error) {
       console.log(error);
@@ -26,7 +28,7 @@ function AdminDashboard() {
 
   const handleReject = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/admin/reject/${id}`);
+      await axios.put(`${API_URL}/api/admin/reject/${id}`);
       fetchMerchants();
     } catch (error) {
       console.log(error);
@@ -43,7 +45,7 @@ function AdminDashboard() {
 
   const counts = {
     all:      merchants.length,
-    approved: merchants.filter((m) => m.isApproved).length,
+    approved: merchants.filter((m) =>  m.isApproved).length,
     pending:  merchants.filter((m) => !m.isApproved).length,
   };
 

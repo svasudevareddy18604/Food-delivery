@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Header from "../../components/customer/Header";
 import "./CustomerOrders.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const statusClass = (s = "") => {
   const v = s.toLowerCase().replace(/\s+/g, "_");
   return `co__status--${v}`;
@@ -10,7 +12,7 @@ const statusClass = (s = "") => {
 
 const imgSrc = (img) =>
   img
-    ? img.startsWith("http") ? img : `http://localhost:5000${img}`
+    ? img.startsWith("http") ? img : `${API_URL}${img}`
     : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=200&auto=format&fit=crop";
 
 export default function CustomerOrders() {
@@ -27,7 +29,7 @@ export default function CustomerOrders() {
       setLoading(false);
       return;
     }
-    fetch(`http://localhost:5000/api/orders/customer/${user._id}`)
+    fetch(`${API_URL}/api/orders/customer/${user._id}`)
       .then((r) => r.json())
       .then((d) => { if (d.success) setOrders(d.orders); else setError(d.message); })
       .catch(() => setError("Failed to load orders."))
@@ -74,8 +76,8 @@ export default function CustomerOrders() {
           {orders.length > 0 && (
             <div className="co__stats">
               {[
-                { v: orders.length, l: "Orders" },
-                { v: totalItems, l: "Items" },
+                { v: orders.length,                    l: "Orders"      },
+                { v: totalItems,                       l: "Items"       },
                 { v: `₹${totalSpend.toLocaleString()}`, l: "Total Spent" },
               ].map(({ v, l }) => (
                 <div className="co__stat" key={l}>

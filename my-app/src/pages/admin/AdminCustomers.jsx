@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "./AdminCustomers.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function AdminCustomers() {
   const [customers, setCustomers] = useState([]);
   const [filter, setFilter]       = useState("all");
@@ -11,7 +13,7 @@ function AdminCustomers() {
   /* ── fetch ── */
   const fetchCustomers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/customers");
+      const res = await axios.get(`${API_URL}/api/admin/customers`);
       setCustomers(res.data.customers);
     } catch (err) {
       console.log(err);
@@ -25,14 +27,14 @@ function AdminCustomers() {
   /* ── block / unblock ── */
   const handleBlock = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/admin/customers/block/${id}`);
+      await axios.put(`${API_URL}/api/admin/customers/block/${id}`);
       fetchCustomers();
     } catch (err) { console.log(err); }
   };
 
   const handleUnblock = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/admin/customers/unblock/${id}`);
+      await axios.put(`${API_URL}/api/admin/customers/unblock/${id}`);
       fetchCustomers();
     } catch (err) { console.log(err); }
   };

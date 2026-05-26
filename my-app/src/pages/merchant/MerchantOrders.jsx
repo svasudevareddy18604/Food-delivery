@@ -11,6 +11,8 @@ const STATUS_LABEL = {
   CANCELLED:        "Cancelled",
 };
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function MerchantOrders() {
   const [orders, setOrders]   = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,7 @@ function MerchantOrders() {
       const merchant = JSON.parse(localStorage.getItem("user"));
       if (!merchant?._id) { setError("Merchant not logged in."); setLoading(false); return; }
 
-      const res  = await fetch(`http://localhost:5000/api/orders/merchant/${merchant._id}`);
+      const res  = await fetch(`${API_URL}/api/orders/merchant/${merchant._id}`);
       const data = await res.json();
       data.success ? setOrders(data.orders) : setError(data.message);
     } catch {
@@ -35,7 +37,7 @@ function MerchantOrders() {
 
   const updateStatus = async (orderId, newStatus) => {
     try {
-      const res  = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      const res  = await fetch(`${API_URL}/api/orders/${orderId}/status`, {
         method:  "PUT",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ orderStatus: newStatus }),
