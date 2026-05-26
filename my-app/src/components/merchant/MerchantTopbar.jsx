@@ -1,253 +1,100 @@
 import "./MerchantTopbar.css";
-
-import {
-  useEffect,
-  useState
-} from "react";
+import { useEffect, useState } from "react";
 
 function MerchantTopbar() {
-
-  const [merchant, setMerchant] =
-    useState(null);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  /* =========================
-     FETCH MERCHANT
-  ========================= */
+  const [merchant, setMerchant] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
     fetchMerchant();
-
   }, []);
 
   const fetchMerchant = async () => {
-
     try {
-
-      /* =========================
-         GET LOGGED USER
-      ========================= */
-
-      const user =
-        JSON.parse(
-
-          localStorage.getItem(
-            "user"
-          )
-
-        );
+      const user = JSON.parse(localStorage.getItem("user"));
 
       if (!user?._id) {
-
-        console.log(
-          "Merchant not logged in"
-        );
-
         setLoading(false);
-
         return;
-
       }
 
-      /* =========================
-         FETCH FROM BACKEND
-      ========================= */
-
-      const response =
-        await fetch(
-
-          `http://localhost:5000/api/merchant-settings/settings/${user._id}`
-
-        );
-
-      const data =
-        await response.json();
-
-      console.log(data);
+      const response = await fetch(
+        `http://localhost:5000/api/merchant-settings/settings/${user._id}`
+      );
+      const data = await response.json();
 
       if (data.success) {
-
-        setMerchant(
-          data.merchant
-        );
-
+        setMerchant(data.merchant);
       }
-
     } catch (error) {
-
       console.log(error);
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
-
-  /* =========================
-     TOGGLE ONLINE STATUS
-  ========================= */
 
   const toggleStatus = async () => {
-
     try {
-
-      const response =
-        await fetch(
-
-          `http://localhost:5000/api/merchant-settings/settings/${merchant._id}/online`,
-
-          {
-            method: "PATCH",
-
-            headers: {
-
-              "Content-Type":
-                "application/json"
-
-            },
-
-            body: JSON.stringify({
-
-              isOnline:
-                !merchant.isOnline
-
-            })
-
-          }
-
-        );
-
-      const data =
-        await response.json();
+      const response = await fetch(
+        `http://localhost:5000/api/merchant-settings/settings/${merchant._id}/online`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isOnline: !merchant.isOnline }),
+        }
+      );
+      const data = await response.json();
 
       if (data.success) {
-
-        setMerchant({
-
-          ...merchant,
-
-          isOnline:
-            data.isOnline
-
-        });
-
+        setMerchant({ ...merchant, isOnline: data.isOnline });
       }
-
     } catch (error) {
-
       console.log(error);
-
     }
-
   };
 
-  /* =========================
-     LOADING
-  ========================= */
+  const restaurantName =
+    merchant?.restaurantName || merchant?.name || "My Restaurant";
 
   if (loading) {
-
     return (
-
-      <div className="merchant-topbar">
-
-        <h3>
-          Loading...
-        </h3>
-
+      <div className="topbar">
+        <div className="topbar__marquee-wrap">
+          <span className="topbar__marquee-text">Loading...</span>
+        </div>
       </div>
-
     );
-
   }
 
   return (
-
-    <div className="merchant-topbar">
-
-      {/* =========================
-          LEFT SIDE
-      ========================= */}
-
-      <div className="merchant-info">
-
-        <h3>
-
-          {
-
-            merchant?.restaurantName ||
-
-            merchant?.name ||
-
-            "Restaurant"
-
-          }
-
-        </h3>
-
-        <p>
-
-          {
-
-            merchant?.email ||
-
-            merchant?.restaurantType ||
-
-            "Restaurant"
-
-          }
-
-        </p>
-
+    <div className="topbar">
+      {/* LEFT — date */}
+      <div className="topbar__date">
+        {new Date().toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+        })}
       </div>
 
-      {/* =========================
-          RIGHT SIDE
-      ========================= */}
-
-      <div className="merchant-profile">
-
-        <button
-
-          className={
-
-            merchant?.isOnline
-
-              ? "status-btn online"
-
-              : "status-btn offline"
-
-          }
-
-          onClick={toggleStatus}
-
-        >
-
-          <span className="status-dot"></span>
-
-          {
-
-            merchant?.isOnline
-
-              ? "Online"
-
-              : "Offline"
-
-          }
-
-        </button>
-
+      {/* CENTER — scrolling name */}
+      <div className="topbar__marquee-wrap">
+        <div className="topbar__marquee">
+          <span>{restaurantName}</span>
+          <span>{restaurantName}</span>
+        </div>
       </div>
 
+      {/* RIGHT — status toggle */}
+      <button
+        className={`topbar__status ${merchant?.isOnline ? "topbar__status--on" : "topbar__status--off"}`}
+        onClick={toggleStatus}
+      >
+        <span className="topbar__status-dot" />
+        {merchant?.isOnline ? "Online" : "Offline"}
+      </button>
     </div>
-
   );
-
 }
 
 export default MerchantTopbar;

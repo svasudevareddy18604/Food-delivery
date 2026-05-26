@@ -1,402 +1,132 @@
 import { useEffect, useState } from "react";
-
 import "./MerchantOrders.css";
 
+const STATUS_OPTIONS = ["PLACED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"];
+
+const STATUS_LABEL = {
+  PLACED:           "Placed",
+  PREPARING:        "Preparing",
+  OUT_FOR_DELIVERY: "Out for Delivery",
+  DELIVERED:        "Delivered",
+  CANCELLED:        "Cancelled",
+};
+
 function MerchantOrders() {
+  const [orders, setOrders]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState("");
 
-  const [orders, setOrders] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
-  useEffect(() => {
-
-    fetchOrders();
-
-  }, []);
+  useEffect(() => { fetchOrders(); }, []);
 
   const fetchOrders = async () => {
-
     try {
+      const merchant = JSON.parse(localStorage.getItem("user"));
+      if (!merchant?._id) { setError("Merchant not logged in."); setLoading(false); return; }
 
-      /* =========================
-         GET MERCHANT
-      ========================= */
-
-      const merchant =
-  JSON.parse(
-
-    localStorage.getItem(
-      "user"
-    )
-
-  );
-
-      if (!merchant?._id) {
-
-        setError(
-          "Merchant not logged in."
-        );
-
-        setLoading(false);
-
-        return;
-
-      }
-
-      /* =========================
-         API CALL
-      ========================= */
-
-      const response =
-        await fetch(
-
-          `http://localhost:5000/api/orders/merchant/${merchant._id}`
-
-        );
-
-      const data =
-        await response.json();
-
-      if (data.success) {
-
-        setOrders(data.orders);
-
-      } else {
-
-        setError(data.message);
-
-      }
-
-    } catch (err) {
-
-      setError(
-        "Failed to load orders."
-      );
-
+      const res  = await fetch(`http://localhost:5000/api/orders/merchant/${merchant._id}`);
+      const data = await res.json();
+      data.success ? setOrders(data.orders) : setError(data.message);
+    } catch {
+      setError("Failed to load orders.");
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
-  /* =========================
-     UPDATE STATUS
-  ========================= */
-
-  const updateStatus = async (
-    orderId,
-    newStatus
-  ) => {
-
+  const updateStatus = async (orderId, newStatus) => {
     try {
-
-      const response =
-        await fetch(
-
-          `http://localhost:5000/api/orders/${orderId}/status`,
-
-          {
-            method: "PUT",
-
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-
-            body: JSON.stringify({
-
-              orderStatus:
-                newStatus
-
-            })
-
-          }
-
-        );
-
-      const data =
-        await response.json();
-
-      if (data.success) {
-
-        fetchOrders();
-
-      } else {
-
-        alert(data.message);
-
-      }
-
-    } catch (err) {
-
-      alert(
-        "Failed to update status."
-      );
-
+      const res  = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+        method:  "PUT",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ orderStatus: newStatus }),
+      });
+      const data = await res.json();
+      data.success ? fetchOrders() : alert(data.message);
+    } catch {
+      alert("Failed to update status.");
     }
-
   };
 
-  /* =========================
-     LOADING
-  ========================= */
-
-  if (loading) {
-
-    return (
-
-      <div className="merchant-orders-page">
-
-        <h2>
-          Loading Orders...
-        </h2>
-
-      </div>
-
-    );
-
-  }
-
-  /* =========================
-     ERROR
-  ========================= */
-
-  if (error) {
-
-    return (
-
-      <div className="merchant-orders-page">
-
-        <h2 className="error-text">
-          {error}
-        </h2>
-
-      </div>
-
-    );
-
-  }
+  if (loading) return <div className="mo-page"><div className="mo-spinner" /></div>;
+  if (error)   return <div className="mo-page"><p className="mo-error">{error}</p></div>;
 
   return (
-
-    <div className="merchant-orders-page">
-
-      <h1 className="page-title">
-        Customer Orders
-      </h1>
-
-      {
-
-        orders.length === 0 ? (
-
-          <div className="empty-orders">
-
-            <h2>
-              No Orders Yet
-            </h2>
-
-          </div>
-
-        ) : (
-
-          <div className="orders-container">
-
-            {
-
-              orders.map((order) => (
-
-                <div
-                  key={order._id}
-                  className="order-card"
-                >
-
-                  <div className="order-header">
-
-                    <h2>
-                      Order ID
-                    </h2>
-
-                    <p>
-                      {order._id}
-                    </p>
-
-                  </div>
-
-                  <div className="order-section">
-
-                    <h3>
-                      Customer
-                    </h3>
-
-                    <p>
-                      {order.customerName || "Customer"}
-                    </p>
-
-                  </div>
-
-                  <div className="order-section">
-
-                    <h3>
-                      Address
-                    </h3>
-
-                    <p>
-                      {order.address}
-                    </p>
-
-                  </div>
-
-                  <div className="order-section">
-
-                    <h3>
-                      Payment
-                    </h3>
-
-                    <p>
-                      {order.paymentMethod}
-                    </p>
-
-                    <p>
-                      {order.paymentStatus}
-                    </p>
-
-                  </div>
-
-                  <div className="order-section">
-
-                    <h3>
-                      Order Status
-                    </h3>
-
-                    <p className="status-badge">
-                      {order.orderStatus}
-                    </p>
-                  </div>
-
-                  <div className="order-section">
-
-                    <h3>
-                      Items
-                    </h3>
-
-                    <div className="items-list">
-
-                      {
-
-                        order.items.map(
-
-                          (
-                            item,
-                            index
-                          ) => (
-
-                            <div
-                              key={index}
-                              className="item-row"
-                            >
-
-                              <span>
-                                {item.name}
-                              </span>
-
-                              <span>
-                                ×
-                                {item.quantity}
-                              </span>
-
-                              <span>
-                                ₹
-                                {item.price}
-                              </span>
-
-                            </div>
-
-                          )
-
-                        )
-
-                      }
-
-                    </div>
-
-                  </div>
-
-                  <div className="order-footer">
-
-                    <h2>
-                      Total:
-                      {" "}
-                      ₹
-                      {order.totalAmount}
-                    </h2>
-
-                    <select
-
-                      value={
-                        order.orderStatus
-                      }
-
-                      onChange={(e) =>
-
-                        updateStatus(
-
-                          order._id,
-
-                          e.target.value
-
-                        )
-
-                      }
-
-                    >
-
-                      <option value="PLACED">
-                        PLACED
-                      </option>
-
-                      <option value="PREPARING">
-                        PREPARING
-                      </option>
-
-                      <option value="OUT_FOR_DELIVERY">
-                        OUT FOR DELIVERY
-                      </option>
-
-                      <option value="DELIVERED">
-                        DELIVERED
-                      </option>
-
-                      <option value="CANCELLED">
-                        CANCELLED
-                      </option>
-
-                    </select>
-
-                  </div>
-
+    <div className="mo-page">
+      <div className="mo-header">
+        <h1 className="mo-title">Customer Orders</h1>
+        <span className="mo-count">{orders.length} order{orders.length !== 1 && "s"}</span>
+      </div>
+
+      {orders.length === 0 ? (
+        <div className="mo-empty">
+          <span className="mo-empty-icon">📭</span>
+          <p>No orders yet. They'll appear here once customers start ordering.</p>
+        </div>
+      ) : (
+        <div className="mo-grid">
+          {orders.map(order => (
+            <div key={order._id} className={`mo-card mo-card--${order.orderStatus.toLowerCase()}`}>
+
+              {/* TOP ROW */}
+              <div className="mo-card-top">
+                <div>
+                  <p className="mo-card-customer">
+  {order.customerId?.name || order.customerName || "Customer"}
+</p>
+
+// And add below the customer name:
+<p className="mo-card-phone">
+  📞 {order.customerId?.phone || "No contact"}
+</p>
+                  <p className="mo-card-id">#{order._id.slice(-8).toUpperCase()}</p>
                 </div>
+                <span className={`mo-status mo-status--${order.orderStatus.toLowerCase()}`}>
+                  {STATUS_LABEL[order.orderStatus] || order.orderStatus}
+                </span>
+              </div>
 
-              ))
+              {/* ADDRESS */}
+              <p className="mo-card-address">📍 {order.address}</p>
 
-            }
+              {/* ITEMS */}
+              <div className="mo-items">
+                {order.items.map((item, i) => (
+                  <div key={i} className="mo-item-row">
+                    <span className="mo-item-name">{item.name}</span>
+                    <span className="mo-item-qty">×{item.quantity}</span>
+                    <span className="mo-item-price">₹{item.price}</span>
+                  </div>
+                ))}
+              </div>
 
-          </div>
+              {/* FOOTER */}
+              <div className="mo-card-footer">
+                <div className="mo-payment">
+                  <span className="mo-pay-method">{order.paymentMethod}</span>
+                  <span className={`mo-pay-status mo-pay-status--${order.paymentStatus?.toLowerCase()}`}>
+                    {order.paymentStatus}
+                  </span>
+                </div>
+                <div className="mo-footer-right">
+                  <p className="mo-total">₹{order.totalAmount}</p>
+                  <select
+                    className="mo-select"
+                    value={order.orderStatus}
+                    onChange={e => updateStatus(order._id, e.target.value)}
+                  >
+                    {STATUS_OPTIONS.map(s => (
+                      <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-        )
-
-      }
-
+            </div>
+          ))}
+        </div>
+      )}
     </div>
-
   );
-
 }
 
 export default MerchantOrders;

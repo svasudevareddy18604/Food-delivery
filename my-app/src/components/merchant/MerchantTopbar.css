@@ -1,49 +1,128 @@
-.merchant-topbar {
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+/* ── SHELL ── */
+.topbar {
   width: 100%;
-  background: white;
-  padding: 20px 30px;
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  border-radius: 15px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  gap: 16px;
+  padding: 0 32px;
+  height: 72px;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(255, 107, 43, 0.1);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  overflow: hidden;
 }
 
-.merchant-info h3 {
-  font-size: 24px;
-  color: #1a1a1a;
-  margin-bottom: 5px;
+/* ── LEFT — date ── */
+.topbar__date {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #aaa;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.merchant-info p {
-  color: #777;
-  font-size: 14px;
-}
-
-.status-btn {
-  border: none;
-  padding: 12px 18px;
-  border-radius: 30px;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
+/* ── CENTER — marquee wrapper ── */
+.topbar__marquee-wrap {
+  flex: 1;
+  overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 14px;
+  justify-content: center;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 12%,
+    black 88%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 12%,
+    black 88%,
+    transparent 100%
+  );
 }
 
-.status-btn.online {
-  background: #22c55e;
+/* ── MARQUEE TRACK ── */
+.topbar__marquee {
+  display: flex;
+  gap: 80px;
+  animation: marquee 14s linear infinite;
+  white-space: nowrap;
 }
 
-.status-btn.offline {
-  background: #ef4444;
+.topbar__marquee span {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ff6b2b, #ff3b7a, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.01em;
 }
 
-.status-dot {
-  width: 10px;
-  height: 10px;
-  background: white;
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(calc(-50% - 40px)); }
+}
+
+/* ── RIGHT — status button ── */
+.topbar__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  border-radius: 100px;
+  border: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+}
+
+.topbar__status--on {
+  background: linear-gradient(135deg, #06d6a0, #00b37a);
+  box-shadow: 0 4px 16px rgba(6, 214, 160, 0.35);
+}
+
+.topbar__status--off {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+}
+
+.topbar__status:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.topbar__status:active {
+  transform: translateY(0);
+}
+
+/* ── STATUS DOT ── */
+.topbar__status-dot {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
 }

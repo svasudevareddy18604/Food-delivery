@@ -1,10 +1,11 @@
 /* ============================================================
-   MERCHANT DASHBOARD — OmniRetail | Syne × Jakarta Sans
+   MERCHANT DASHBOARD — Foodie | Syne × Jakarta Sans
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 :root {
+  --sidebar-w:  262px;
   --orange:     #ff6b2b;
   --orange2:    #ff9f1c;
   --pink:       #ff3b7a;
@@ -15,35 +16,59 @@
   --white:      #ffffff;
   --charcoal:   #1a1a2e;
   --muted:      #8b8fa8;
-  --border:     rgba(255,107,43,.13);
-  --grad1:      linear-gradient(135deg,#ff6b2b 0%,#ff3b7a 50%,#7c3aed 100%);
-  --shadow-sm:  0 2px 12px rgba(255,107,43,.07);
-  --shadow-md:  0 12px 40px rgba(255,107,43,.13);
+  --border:     rgba(255, 107, 43, 0.13);
+  --grad1:      linear-gradient(135deg, #ff6b2b 0%, #ff3b7a 50%, #7c3aed 100%);
+  --shadow-sm:  0 2px 12px rgba(255, 107, 43, 0.07);
+  --shadow-md:  0 12px 40px rgba(255, 107, 43, 0.13);
   --r:          18px;
   --r-sm:       12px;
 }
 
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--cream); color:var(--charcoal); -webkit-font-smoothing:antialiased; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--cream);
+  color: var(--charcoal);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── OUTER SHELL ── */
 .merchant-dashboard {
-  display:flex;
-  min-height:100vh;
-  background:var(--cream);
+  display: flex;
+  min-height: 100vh;
+  background: var(--cream);
 }
 
+/* ── MAIN AREA — pushed right by exactly the sidebar width ── */
 .merchant-main {
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  min-width:0;
+  margin-left: var(--sidebar-w);   /* offset for fixed sidebar */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
 }
 
+/* ── SCROLLABLE CONTENT ── */
 .merchant-content {
-  padding:32px 36px;
-  flex:1;
+  flex: 1;
+  padding: 32px 36px;
+  overflow-y: auto;
 }
 
-@media (max-width:768px) {
-  .merchant-content { padding:20px 16px; }
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .merchant-main {
+    margin-left: 0;        /* sidebar hides on mobile */
+  }
+  .merchant-content {
+    padding: 20px 16px;
+  }
 }

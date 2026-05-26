@@ -9,7 +9,7 @@ import MerchantAnalytics from "./MerchantAnalytics";
 import MerchantSettings from "./MerchantSettings";
 
 const TABS = {
-  home:      <MerchantHome />,      // ✅ added
+  home:      <MerchantHome />,
   foods:     <MerchantFoods />,
   orders:    <MerchantOrders />,
   analytics: <MerchantAnalytics />,
@@ -17,7 +17,7 @@ const TABS = {
 };
 
 export default function MerchantDashboard() {
-  const [activeTab, setActiveTab] = useState("home");  // ✅ changed from "foods"
+  const [activeTab, setActiveTab] = useState("home");
 
   return (
     <div className="merchant-dashboard">
@@ -25,7 +25,7 @@ export default function MerchantDashboard() {
       <div className="merchant-main">
         <MerchantTopbar />
         <div className="merchant-content">
-          {TABS[activeTab]}          {/* ✅ removed broken fallback */}
+          {TABS[activeTab]}
         </div>
       </div>
     </div>
