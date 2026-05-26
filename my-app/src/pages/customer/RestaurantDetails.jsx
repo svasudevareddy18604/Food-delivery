@@ -3,10 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import "./RestaurantDetails.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const DELIVERY_TIMES = { Starter: 15, Main: 30, Dessert: 20, Beverage: 10, Snack: 12, default: 25 };
 const getDelivery = (cat) => DELIVERY_TIMES[cat] || DELIVERY_TIMES.default;
 const IMG_FALLBACK = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop";
-const imgSrc = (p) => p ? (p.startsWith("http") ? p : `http://localhost:5000${p}`) : IMG_FALLBACK;
+const imgSrc = (p) => p ? (p.startsWith("http") ? p : `${API_URL}${p}`) : IMG_FALLBACK;
 
 function isOpen(opening, closing) {
   if (!opening || !closing) return null;
@@ -157,8 +159,8 @@ export default function RestaurantDetails() {
   const fetchAll = async () => {
     try {
       const [restRes, foodRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/merchant/approved-restaurants"),
-        axios.get(`http://localhost:5000/api/merchant-food/foods/${merchantId}`),
+        axios.get(`${API_URL}/api/merchant/approved-restaurants`),
+        axios.get(`${API_URL}/api/merchant-food/foods/${merchantId}`),
       ]);
       const list = restRes.data.restaurants || [];
       const found = list.find(r => r._id === merchantId);
@@ -233,7 +235,6 @@ export default function RestaurantDetails() {
           </div>
 
           <div className="rd-hero__actions">
-            {/* Cart badge */}
             <button className="rd-btn-cart" onClick={() => navigate("/cart")}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>

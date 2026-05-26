@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Header from "../../components/customer/Header";
 import "./Cart.css";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Cart() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
@@ -19,10 +21,10 @@ export default function Cart() {
     window.dispatchEvent(new Event("cart-updated"));
   };
 
-  const inc  = (id) => save(items.map(i => i._id === id ? { ...i, quantity: i.quantity + 1 } : i));
-  const dec  = (id) => save(items.map(i => i._id === id ? { ...i, quantity: i.quantity - 1 } : i).filter(i => i.quantity > 0));
-  const del  = (id) => save(items.filter(i => i._id !== id));
-  const clear = ()  => save([]);
+  const inc   = (id) => save(items.map(i => i._id === id ? { ...i, quantity: i.quantity + 1 } : i));
+  const dec   = (id) => save(items.map(i => i._id === id ? { ...i, quantity: i.quantity - 1 } : i).filter(i => i.quantity > 0));
+  const del   = (id) => save(items.filter(i => i._id !== id));
+  const clear = ()   => save([]);
 
   const subtotal = items.reduce((s, i) => s + Number(i.price) * i.quantity, 0);
   const delivery = items.length > 0 ? 40 : 0;
@@ -30,7 +32,7 @@ export default function Cart() {
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
 
   const imgSrc = (p) => p
-    ? (p.startsWith("http") ? p : `http://localhost:5000${p}`)
+    ? (p.startsWith("http") ? p : `${API_URL}${p}`)
     : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400&auto=format&fit=crop";
 
   return (

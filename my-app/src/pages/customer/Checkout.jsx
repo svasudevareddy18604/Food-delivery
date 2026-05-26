@@ -4,7 +4,8 @@ import axios                   from "axios";
 import Header                  from "../../components/customer/Header";
 import "./Checkout.css";
 
-const API = "http://localhost:5000/api/checkout";
+const API_URL = import.meta.env.VITE_API_URL;
+const API     = `${API_URL}/api/checkout`;
 
 function loadRazorpay() {
   return new Promise((resolve) => {
@@ -81,8 +82,8 @@ export default function Checkout() {
         merchantId,
         items:         cart.map(i => ({ foodId: i._id, name: i.name, image: i.image, price: i.price, quantity: i.quantity })),
         address:       form.address,
-        customerName:  form.name,     // ← always send from form
-        customerPhone: form.phone,    // ← always send from form
+        customerName:  form.name,
+        customerPhone: form.phone,
         paymentMethod: payMethod,
         totalAmount:   total,
       };
@@ -138,7 +139,7 @@ export default function Checkout() {
   };
 
   const imgSrc = (img) => img
-    ? img.startsWith("http") ? img : `http://localhost:5000${img}`
+    ? img.startsWith("http") ? img : `${API_URL}${img}`
     : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=120&auto=format&fit=crop";
 
   if (!cart.length) return (
@@ -172,9 +173,9 @@ export default function Checkout() {
           </div>
           <div className="ck__stats">
             {[
-              { v: totalQty,                       l: "Items"    },
+              { v: totalQty,                        l: "Items"    },
               { v: `₹${subtotal.toLocaleString()}`, l: "Subtotal" },
-              { v: "~30 min",                      l: "ETA"      },
+              { v: "~30 min",                       l: "ETA"      },
             ].map(({ v, l }) => (
               <div className="ck__stat" key={l}>
                 <strong>{v}</strong>
@@ -236,8 +237,8 @@ export default function Checkout() {
                 <div className="ck__card-body">
                   <div className="ck__pay-opts">
                     {[
-                      { id: "COD",    icon: "💵", label: "Cash on Delivery", sub: "Pay when your order arrives"            },
-                      { id: "ONLINE", icon: "💳", label: "Pay Online",        sub: "UPI, Cards, Net Banking via Razorpay"  },
+                      { id: "COD",    icon: "💵", label: "Cash on Delivery", sub: "Pay when your order arrives"           },
+                      { id: "ONLINE", icon: "💳", label: "Pay Online",        sub: "UPI, Cards, Net Banking via Razorpay" },
                     ].map(opt => (
                       <button key={opt.id}
                         className={`ck__pay-opt ${payMethod === opt.id ? "ck__pay-opt--active" : ""}`}

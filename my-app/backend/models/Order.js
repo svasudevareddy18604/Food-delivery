@@ -2,22 +2,85 @@ const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema({
 
-  customerId:    { type: String, required: true },
-  merchantId:    { type: String, required: true },
+  /* =========================
+     ORDER NUMBER
+  ========================= */
 
-  /* ── customer snapshot (stored at order time) ── */
-  customerName:  { type: String, default: "Customer"    },
-  customerPhone: { type: String, default: "No contact"  },
+  orderNumber: {
+    type: String,
+    required: true,
+    unique: true,
+  },
 
-  items: [{
-    foodId:   String,
-    name:     String,
-    image:    String,
-    price:    Number,
-    quantity: Number,
-  }],
+  /* =========================
+     CUSTOMER + MERCHANT
+  ========================= */
 
-  address:       { type: String, required: true },
+  customerId: {
+    type: String,
+    required: true,
+  },
+
+  merchantId: {
+    type: String,
+    required: true,
+  },
+
+  /* =========================
+     CUSTOMER SNAPSHOT
+  ========================= */
+
+  customerName: {
+    type: String,
+    default: "Customer",
+  },
+
+  customerPhone: {
+    type: String,
+    default: "No contact",
+  },
+
+  /* =========================
+     ORDER ITEMS
+  ========================= */
+
+  items: [
+    {
+      foodId: {
+        type: String,
+      },
+
+      name: {
+        type: String,
+      },
+
+      image: {
+        type: String,
+      },
+
+      price: {
+        type: Number,
+      },
+
+      quantity: {
+        type: Number,
+        default: 1,
+      },
+    },
+  ],
+
+  /* =========================
+     DELIVERY ADDRESS
+  ========================= */
+
+  address: {
+    type: String,
+    required: true,
+  },
+
+  /* =========================
+     PAYMENT
+  ========================= */
 
   paymentMethod: {
     type: String,
@@ -31,22 +94,50 @@ const orderSchema = new mongoose.Schema({
     default: "PENDING",
   },
 
+  /* =========================
+     ORDER STATUS
+  ========================= */
+
   orderStatus: {
     type: String,
+
     enum: [
       "PLACED",
       "PREPARING",
       "OUT_FOR_DELIVERY",
       "DELIVERED",
-      "CANCELLED",        // ← was missing, caused update to silently fail
+      "CANCELLED",
     ],
+
     default: "PLACED",
   },
 
-  totalAmount:       { type: Number, required: true },
-  razorpayOrderId:   { type: String },
-  razorpayPaymentId: { type: String },
+  /* =========================
+     TOTAL
+  ========================= */
 
-}, { timestamps: true });
+  totalAmount: {
+    type: Number,
+    required: true,
+  },
 
-module.exports = mongoose.model("Order", orderSchema);
+  /* =========================
+     RAZORPAY
+  ========================= */
+
+  razorpayOrderId: {
+    type: String,
+  },
+
+  razorpayPaymentId: {
+    type: String,
+  },
+
+}, {
+
+  timestamps: true
+
+});
+
+module.exports =
+  mongoose.model("Order", orderSchema);
