@@ -12,6 +12,7 @@ const STATS = [
   { value: "30min", label: "Avg delivery" },
 ];
 
+const API_URL = import.meta.env.VITE_API_URL;
 
 const CAT_EMOJI = {
   pizza: "🍕", sushi: "🍣", healthy: "🥗", salad: "🥗",
@@ -81,7 +82,7 @@ function RestaurantCard({ r, onBook }) {
           ? <img
               src={r.restaurantImage.startsWith("http")
                 ? r.restaurantImage
-                : `${import.meta.env.VITE_API_URL}/${r.restaurantImage.replace(/^\//, "")}`}
+                : `${API_URL}/${r.restaurantImage.replace(/^\//, "")}`}
               alt={r.restaurantName}
               loading="lazy"
             />
@@ -158,7 +159,7 @@ function FoodItemCard({ item, onAddToCart, isClosed }) {
   const imgSrc = item.image
     ? item.image.startsWith("http")
       ? item.image
-    : `${import.meta.env.VITE_API_URL}/${item.image.replace(/^\//, "")}`
+      : `${API_URL}/${item.image.replace(/^\//, "")}`
     : null;
 
   return (
@@ -226,7 +227,7 @@ function MenuItemCard({ item, onAddToCart, isClosed }) {
       <div className="menu-item-card__img">
         {item.image
           ? <img
-              src={item.image.startsWith("http") ? item.image : `${import.meta.env.VITE_API_URL}/${item.image.replace(/^\//, "")}`}
+              src={item.image.startsWith("http") ? item.image : `${API_URL}/${item.image.replace(/^\//, "")}`}
               alt={item.name}
               loading="lazy"
             />
@@ -263,7 +264,7 @@ function BookingModal({ restaurant, onClose }) {
     setLoading(true);
     try {
       await axios.post(
-  `${import.meta.env.VITE_API_URL}/api/reservations`,
+        `${API_URL}/api/reservations`,
         { restaurantId: restaurant._id, ...form },
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
@@ -364,8 +365,8 @@ export default function Home() {
     try {
       // Fetch restaurants
       const { data } = await axios.get(
-  `${import.meta.env.VITE_API_URL}/api/merchant/approved-restaurants`
-);
+        `${API_URL}/api/merchant/approved-restaurants`
+      );
       const list = data.restaurants || [];
       setRestaurants(list);
       setFiltered(list);
@@ -373,7 +374,6 @@ export default function Home() {
       // Build merchantId → restaurant map
       const merchantMap = {};
       list.forEach(r => {
-        // some backends use r.merchantId, others r._id as the owner id
         merchantMap[r._id] = r.restaurantName;
         if (r.merchantId) merchantMap[r.merchantId] = r.restaurantName;
       });
@@ -396,9 +396,9 @@ export default function Home() {
       // Fetch all food items from the dedicated endpoint
       try {
         setFoodLoading(true);
-      const foodRes = await axios.get(
-  `${import.meta.env.VITE_API_URL}/api/merchant-food/all-foods`
-);
+        const foodRes = await axios.get(
+          `${API_URL}/api/merchant-food/all-foods`
+        );
         const foods = (foodRes.data.foods || []).map(f => ({
           ...f,
           restaurantName: merchantMap[f.merchantId] || "Unknown restaurant",
