@@ -10,7 +10,7 @@ function loadRazorpay() {
   return new Promise((resolve) => {
     if (window.Razorpay) return resolve(true);
     const s = document.createElement("script");
-    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.src     = "https://checkout.razorpay.com/v1/checkout.js";
     s.onload  = () => resolve(true);
     s.onerror = () => resolve(false);
     document.body.appendChild(s);
@@ -34,21 +34,22 @@ function Steps({ step }) {
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const [cart,    setCart]  = useState([]);
-  const [user,    setUser]  = useState(null);
-  const [step,    setStep]  = useState(0);
-  const [loading, setLoad]  = useState(false);
-  const [error,   setError] = useState("");
-  const [mounted, setMounted] = useState(false);
-  const [form,    setForm]  = useState({ name: "", phone: "", address: "" });
-  const [payMethod, setPay] = useState("COD");
+  const [cart,      setCart]    = useState([]);
+  const [user,      setUser]    = useState(null);
+  const [step,      setStep]    = useState(0);
+  const [loading,   setLoad]    = useState(false);
+  const [error,     setError]   = useState("");
+  const [mounted,   setMounted] = useState(false);
+  const [form,      setForm]    = useState({ name: "", phone: "", address: "" });
+  const [payMethod, setPay]     = useState("COD");
 
   useEffect(() => {
     const c = JSON.parse(localStorage.getItem("cart") || "[]");
     const u = JSON.parse(localStorage.getItem("user") || "null");
     setCart(c);
     setUser(u);
-    if (u) setForm(f => ({ ...f, name: u.name || "", phone: u.phone || "" }));
+    /* prefill name + phone from user profile */
+    if (u) setForm(f => ({ ...f, name: u.name || "", phone: u.phoneNumber || "" }));
     setTimeout(() => setMounted(true), 60);
   }, []);
 
@@ -61,17 +62,17 @@ export default function Checkout() {
   const merchantId = cart[0]?.restaurantId || cart[0]?.merchantId || "";
 
   const validateDelivery = () => {
-    if (!form.name.trim())    { setError("Please enter your full name.");     return false; }
-    if (!form.phone.trim())   { setError("Please enter your phone number.");  return false; }
-    if (!form.address.trim()) { setError("Please enter delivery address.");   return false; }
+    if (!form.name.trim())    { setError("Please enter your full name.");    return false; }
+    if (!form.phone.trim())   { setError("Please enter your phone number."); return false; }
+    if (!form.address.trim()) { setError("Please enter delivery address.");  return false; }
     return true;
   };
 
   const placeOrder = async () => {
     setError("");
     if (!validateDelivery()) return;
-    if (!user?._id)   return setError("Please sign in to place an order.");
-    if (!merchantId)  return setError("Cart is missing restaurant info.");
+    if (!user?._id)  return setError("Please sign in to place an order.");
+    if (!merchantId) return setError("Cart is missing restaurant info.");
 
     setLoad(true);
     try {
@@ -80,6 +81,8 @@ export default function Checkout() {
         merchantId,
         items:         cart.map(i => ({ foodId: i._id, name: i.name, image: i.image, price: i.price, quantity: i.quantity })),
         address:       form.address,
+        customerName:  form.name,     // ← always send from form
+        customerPhone: form.phone,    // ← always send from form
         paymentMethod: payMethod,
         totalAmount:   total,
       };
@@ -147,7 +150,9 @@ export default function Checkout() {
         <p>Add some delicious items before checking out.</p>
         <button className="ck__empty-cta" onClick={() => navigate("/")}>
           Browse Restaurants
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </button>
       </div>
     </div>
@@ -167,9 +172,9 @@ export default function Checkout() {
           </div>
           <div className="ck__stats">
             {[
-              { v: totalQty, l: "Items" },
+              { v: totalQty,                       l: "Items"    },
               { v: `₹${subtotal.toLocaleString()}`, l: "Subtotal" },
-              { v: "~30 min", l: "ETA" },
+              { v: "~30 min",                      l: "ETA"      },
             ].map(({ v, l }) => (
               <div className="ck__stat" key={l}>
                 <strong>{v}</strong>
@@ -212,7 +217,9 @@ export default function Checkout() {
                   {error && <p className="ck__error">{error}</p>}
                   <button className="ck__btn" onClick={() => { if (validateDelivery()) { setError(""); setStep(1); } }}>
                     Continue to Payment
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
                   </button>
                 </div>
               )}
@@ -229,8 +236,8 @@ export default function Checkout() {
                 <div className="ck__card-body">
                   <div className="ck__pay-opts">
                     {[
-                      { id: "COD",    icon: "💵", label: "Cash on Delivery",   sub: "Pay when your order arrives" },
-                      { id: "ONLINE", icon: "💳", label: "Pay Online",          sub: "UPI, Cards, Net Banking via Razorpay" },
+                      { id: "COD",    icon: "💵", label: "Cash on Delivery", sub: "Pay when your order arrives"            },
+                      { id: "ONLINE", icon: "💳", label: "Pay Online",        sub: "UPI, Cards, Net Banking via Razorpay"  },
                     ].map(opt => (
                       <button key={opt.id}
                         className={`ck__pay-opt ${payMethod === opt.id ? "ck__pay-opt--active" : ""}`}
@@ -246,7 +253,9 @@ export default function Checkout() {
                   </div>
                   <button className="ck__btn" onClick={() => setStep(2)}>
                     Review Order
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
                   </button>
                 </div>
               )}
@@ -263,6 +272,10 @@ export default function Checkout() {
                   <div className="ck__review-row">
                     <span>📍 Delivering to</span>
                     <strong>{form.address}</strong>
+                  </div>
+                  <div className="ck__review-row">
+                    <span>📞 Contact</span>
+                    <strong>{form.phone}</strong>
                   </div>
                   <div className="ck__review-row">
                     <span>💳 Payment</span>

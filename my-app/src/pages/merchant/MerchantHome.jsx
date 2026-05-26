@@ -3,46 +3,9 @@ import axios from "axios";
 import {
   LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend
+  ResponsiveContainer,
 } from "recharts";
 import "./MerchantHome.css";
-
-const STAT_CARDS = [
-  { key: "totalOrders",   label: "Total Orders",   icon: "📦", color: "blue"   },
-  { key: "revenue",       label: "Total Revenue",  icon: "💰", color: "green"  },
-  { key: "pending",       label: "Pending",         icon: "⏳", color: "amber"  },
-  { key: "completed",     label: "Completed",       icon: "✅", color: "purple" },
-];
-
-const MOCK_WEEKLY = [
-  { day: "Mon", orders: 12, revenue: 3200 },
-  { day: "Tue", orders: 19, revenue: 5100 },
-  { day: "Wed", orders: 15, revenue: 4200 },
-  { day: "Thu", orders: 22, revenue: 6800 },
-  { day: "Fri", orders: 30, revenue: 9100 },
-  { day: "Sat", orders: 28, revenue: 8400 },
-  { day: "Sun", orders: 18, revenue: 5600 },
-];
-
-const MOCK_MONTHLY = [
-  { month: "Jan", revenue: 42000 }, { month: "Feb", revenue: 38000 },
-  { month: "Mar", revenue: 55000 }, { month: "Apr", revenue: 61000 },
-  { month: "May", revenue: 49000 }, { month: "Jun", revenue: 72000 },
-];
-
-const STATUS_CLASS = { pending: "amber", completed: "green", cancelled: "red", processing: "blue" };
-
-function StatCard({ label, icon, color, value, prefix = "" }) {
-  return (
-    <div className={`mh__stat mh__stat--${color}`}>
-      <div className="mh__stat-icon">{icon}</div>
-      <div>
-        <p className="mh__stat-label">{label}</p>
-        <p className="mh__stat-value">{prefix}{value ?? "—"}</p>
-      </div>
-    </div>
-  );
-}
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -58,9 +21,56 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
+function StatCard({ label, icon, color, value, prefix = "" }) {
+  return (
+    <div className={`mh__stat mh__stat--${color}`}>
+      <div className="mh__stat-icon">{icon}</div>
+      <div>
+        <p className="mh__stat-label">{label}</p>
+        <p className="mh__stat-value">{prefix}{value ?? "0"}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── helpers ── */
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MON_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function buildWeekly(orders) {
+  const map = {};
+  DAY_LABELS.forEach(d => { map[d] = { day: d, orders: 0, revenue: 0 }; });
+  orders.forEach(o => {
+    const d = DAY_LABELS[new Date(o.createdAt).getDay()];
+    map[d].orders  += 1;
+    map[d].revenue += o.totalAmount || 0;
+  });
+  return DAY_LABELS.map(d => map[d]);
+}
+
+function buildMonthly(orders) {
+  const map = {};
+  MON_LABELS.forEach(m => { map[m] = { month: m, revenue: 0 }; });
+  orders.forEach(o => {
+    const m = MON_LABELS[new Date(o.createdAt).getMonth()];
+    map[m].revenue += o.totalAmount || 0;
+  });
+  return MON_LABELS.map(m => map[m]);
+}
+
+const STATUS_COLOR = {
+  PLACED:           "blue",
+  PREPARING:        "amber",
+  OUT_FOR_DELIVERY: "purple",
+  DELIVERED:        "green",
+  CANCELLED:        "red",
+};
+
 export default function MerchantHome() {
-  const [orders, setOrders]   = useState([]);
-  const [stats, setStats]     = useState({});
+  const [orders,  setOrders]  = useState([]);
+  const [stats,   setStats]   = useState({});
+  const [weekly,  setWeekly]  = useState([]);
+  const [monthly, setMonthly] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
@@ -71,61 +81,75 @@ export default function MerchantHome() {
 
   const fetchData = async () => {
     try {
-      const merchantId = localStorage.getItem("merchantId");
+      const merchant   = JSON.parse(localStorage.getItem("user"));
+      const merchantId = merchant?._id || localStorage.getItem("merchantId");
+
       const { data } = await axios.get(
         `http://localhost:5000/api/orders/merchant/${merchantId}`
       );
-      const allOrders = data.orders || [];
-      setOrders(allOrders);
+
+      const all = data.orders || [];
+      setOrders(all);
+
       setStats({
-        totalOrders: allOrders.length,
-        revenue:     allOrders.filter(o => o.status === "completed").reduce((s, o) => s + (o.totalAmount || 0), 0),
-        pending:     allOrders.filter(o => o.status === "pending").length,
-        completed:   allOrders.filter(o => o.status === "completed").length,
+        totalOrders: all.length,
+        revenue:     all
+                       .filter(o => o.orderStatus === "DELIVERED")
+                       .reduce((s, o) => s + (o.totalAmount || 0), 0),
+        pending:     all.filter(o =>
+                       ["PLACED", "PREPARING", "OUT_FOR_DELIVERY"].includes(o.orderStatus)
+                     ).length,
+        completed:   all.filter(o => o.orderStatus === "DELIVERED").length,
       });
-    } catch {
-      // fallback mock stats for UI preview
-      setStats({ totalOrders: 127, revenue: 48320, pending: 8, completed: 114 });
-      setOrders([]);
-    } finally { setLoading(false); }
+
+      setWeekly(buildWeekly(all));
+      setMonthly(buildMonthly(all));
+    } catch (err) {
+      console.error(err);
+      setStats({ totalOrders: 0, revenue: 0, pending: 0, completed: 0 });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const recentOrders = orders.slice(0, 6);
+  const recentOrders = [...orders].slice(0, 6);
 
   return (
     <div className={`mh ${mounted ? "mh--in" : ""}`}>
 
-      {/* ── WELCOME BANNER ── */}
+      {/* ── BANNER ── */}
       <div className="mh__banner">
         <div>
           <p className="mh__banner-sub">Good day 👋</p>
           <h1 className="mh__banner-title">Dashboard Overview</h1>
         </div>
         <div className="mh__banner-date">
-          {new Date().toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long" })}
+          {new Date().toLocaleDateString("en-IN", {
+            weekday: "long", day: "numeric", month: "long",
+          })}
         </div>
       </div>
 
       {/* ── STAT CARDS ── */}
       <div className="mh__stats">
-        <StatCard label="Total Orders"   icon="📦" color="blue"   value={stats.totalOrders} />
-        <StatCard label="Total Revenue"  icon="💰" color="green"  value={stats.revenue?.toLocaleString()} prefix="₹" />
-        <StatCard label="Pending"        icon="⏳" color="amber"  value={stats.pending} />
-        <StatCard label="Completed"      icon="✅" color="purple" value={stats.completed} />
+        <StatCard label="Total Orders"  icon="📦" color="blue"   value={stats.totalOrders} />
+        <StatCard label="Total Revenue" icon="💰" color="green"  value={stats.revenue?.toLocaleString()} prefix="₹" />
+        <StatCard label="Pending"       icon="⏳" color="amber"  value={stats.pending} />
+        <StatCard label="Completed"     icon="✅" color="purple" value={stats.completed} />
       </div>
 
-      {/* ── CHARTS ROW ── */}
+      {/* ── CHARTS ── */}
       <div className="mh__charts">
-        {/* Weekly orders line chart */}
+
         <div className="mh__chart-card">
           <div className="mh__chart-head">
             <h3>Weekly Orders</h3>
             <span className="mh__chart-badge">This Week</span>
           </div>
           <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={MOCK_WEEKLY} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+            <LineChart data={weekly} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,107,43,.08)" />
-              <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#8b8fa8" }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="day"  tick={{ fontSize: 11, fill: "#8b8fa8" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#8b8fa8" }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Line type="monotone" dataKey="orders" stroke="#ff6b2b" strokeWidth={2.5}
@@ -134,31 +158,31 @@ export default function MerchantHome() {
           </ResponsiveContainer>
         </div>
 
-        {/* Monthly revenue bar chart */}
         <div className="mh__chart-card">
           <div className="mh__chart-head">
             <h3>Monthly Revenue</h3>
-            <span className="mh__chart-badge">2024</span>
+            <span className="mh__chart-badge">{new Date().getFullYear()}</span>
           </div>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={MOCK_MONTHLY} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+            <BarChart data={monthly} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor="#ff6b2b" />
+                  <stop offset="100%" stopColor="#7c3aed" />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,107,43,.08)" />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8b8fa8" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#8b8fa8" }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="revenue" fill="url(#barGrad)" radius={[6,6,0,0]} name="revenue" />
-              <defs>
-                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#ff6b2b" />
-                  <stop offset="100%" stopColor="#7c3aed" />
-                </linearGradient>
-              </defs>
+              <Bar dataKey="revenue" fill="url(#barGrad)" radius={[6, 6, 0, 0]} name="revenue" />
             </BarChart>
           </ResponsiveContainer>
         </div>
+
       </div>
 
-      {/* ── RECENT ORDERS ── */}
+      {/* ── RECENT ORDERS TABLE ── */}
       <div className="mh__orders-card">
         <div className="mh__chart-head">
           <h3>Recent Orders</h3>
@@ -178,6 +202,7 @@ export default function MerchantHome() {
                 <tr>
                   <th>Order ID</th>
                   <th>Customer</th>
+                  <th>Phone</th>
                   <th>Items</th>
                   <th>Amount</th>
                   <th>Status</th>
@@ -188,16 +213,19 @@ export default function MerchantHome() {
                 {recentOrders.map(o => (
                   <tr key={o._id}>
                     <td className="mh__order-id">#{o._id?.slice(-6).toUpperCase()}</td>
-                    <td>{o.customerName || o.userId?.name || "Customer"}</td>
+                    <td>{o.customerName || "Customer"}</td>
+                    <td className="mh__muted">{o.customerPhone || "—"}</td>
                     <td>{o.items?.length ?? 1} item{o.items?.length !== 1 ? "s" : ""}</td>
                     <td className="mh__amount">₹{o.totalAmount?.toLocaleString() || "—"}</td>
                     <td>
-                      <span className={`mh__status mh__status--${STATUS_CLASS[o.status] || "blue"}`}>
-                        {o.status || "pending"}
+                      <span className={`mh__status mh__status--${STATUS_COLOR[o.orderStatus] || "blue"}`}>
+                        {o.orderStatus || "—"}
                       </span>
                     </td>
                     <td className="mh__date">
-                      {o.createdAt ? new Date(o.createdAt).toLocaleDateString("en-IN", { day:"numeric", month:"short" }) : "—"}
+                      {o.createdAt
+                        ? new Date(o.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+                        : "—"}
                     </td>
                   </tr>
                 ))}

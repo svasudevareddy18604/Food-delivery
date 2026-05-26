@@ -1,0 +1,212 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+/* ── SHELL ── */
+.topbar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 28px;
+  height: 68px;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(255, 107, 43, 0.1);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* ── LEFT ── */
+.topbar__left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.topbar__page {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1;
+}
+
+.topbar__date {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #aaa;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ── CENTER — marquee ── */
+.topbar__marquee-wrap {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
+}
+
+.topbar__marquee {
+  display: flex;
+  gap: 80px;
+  animation: marquee 16s linear infinite;
+  white-space: nowrap;
+}
+
+.topbar__marquee span {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ff6b2b, #ff3b7a, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.02em;
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(calc(-50% - 40px)); }
+}
+
+/* ── RIGHT ── */
+.topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Icon buttons */
+.topbar__icon-btn {
+  position: relative;
+  width: 36px; height: 36px;
+  border: 1px solid rgba(255,107,43,0.12);
+  background: transparent;
+  color: #aaa;
+  border-radius: 10px;
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: all 0.18s;
+}
+.topbar__icon-btn:hover {
+  background: rgba(255,107,43,0.06);
+  color: #ff6b2b;
+  border-color: rgba(255,107,43,0.25);
+}
+
+.topbar__badge {
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 14px; height: 14px;
+  background: linear-gradient(135deg, #ff6b2b, #ff3b7a);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Avatar */
+.topbar__avatar-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 12px 5px 5px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,107,43,0.12);
+  cursor: pointer;
+  margin-left: 4px;
+  transition: all 0.18s;
+}
+.topbar__avatar-wrap:hover {
+  background: rgba(255,107,43,0.05);
+  border-color: rgba(255,107,43,0.25);
+}
+
+.topbar__avatar {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #ff6b2b, #ff3b7a);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: grid; place-items: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.topbar__user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.topbar__user-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1;
+}
+.topbar__user-role {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  color: #aaa;
+  font-weight: 500;
+}
+
+.topbar__chevron {
+  color: #bbb;
+  transition: transform 0.2s;
+}
+.topbar__chevron.open { transform: rotate(180deg); }
+
+/* Dropdown */
+.topbar__dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 150px;
+  background: #fff;
+  border: 1px solid rgba(255,107,43,0.12);
+  border-radius: 12px;
+  padding: 5px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.10);
+  animation: fadeDown 0.14s ease;
+  z-index: 100;
+}
+
+.topbar__drop-item {
+  display: block;
+  width: 100%;
+  padding: 9px 13px;
+  background: none;
+  border: none;
+  color: #555;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.topbar__drop-item:hover {
+  background: rgba(255,107,43,0.07);
+  color: #ff6b2b;
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

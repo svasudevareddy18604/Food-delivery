@@ -52,6 +52,7 @@ function MerchantOrders() {
 
   return (
     <div className="mo-page">
+
       <div className="mo-header">
         <h1 className="mo-title">Customer Orders</h1>
         <span className="mo-count">{orders.length} order{orders.length !== 1 && "s"}</span>
@@ -70,14 +71,8 @@ function MerchantOrders() {
               {/* TOP ROW */}
               <div className="mo-card-top">
                 <div>
-                  <p className="mo-card-customer">
-  {order.customerId?.name || order.customerName || "Customer"}
-</p>
-
-// And add below the customer name:
-<p className="mo-card-phone">
-  📞 {order.customerId?.phone || "No contact"}
-</p>
+                  <p className="mo-card-customer">{order.customerName || "Customer"}</p>
+                  <p className="mo-card-phone">📞 {order.customerPhone || "No contact"}</p>
                   <p className="mo-card-id">#{order._id.slice(-8).toUpperCase()}</p>
                 </div>
                 <span className={`mo-status mo-status--${order.orderStatus.toLowerCase()}`}>
@@ -125,6 +120,7 @@ function MerchantOrders() {
           ))}
         </div>
       )}
+
     </div>
   );
 }

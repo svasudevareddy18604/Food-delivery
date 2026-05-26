@@ -26,9 +26,11 @@ const userSchema = new mongoose.Schema(
     /* ONLINE / OFFLINE TOGGLE */
     isOnline: { type: Boolean, default: false },
 
-    /* APPROVAL */
+    /* APPROVAL & STATUS */
     registrationCompleted: { type: Boolean, default: false },
     isApproved:            { type: Boolean, default: false },
+    isRejected:            { type: Boolean, default: false },
+    isBlocked:             { type: Boolean, default: false },
   },
   { timestamps: true }
 );

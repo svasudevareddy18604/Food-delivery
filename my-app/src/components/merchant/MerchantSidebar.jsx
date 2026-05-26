@@ -45,6 +45,7 @@ export default function MerchantSidebar({ activeTab, setActiveTab, merchantName 
           <p className="ms__merchant-role">Owner · Active</p>
         </div>
         <span className="ms__online" title="Online" />
+        
       </div>
 
       {/* NAV */}
@@ -57,6 +58,7 @@ export default function MerchantSidebar({ activeTab, setActiveTab, merchantName 
             onClick={() => setActiveTab(m.id)}
           >
             <span className="ms__icon">{m.icon}</span>
+            
             <span className="ms__label">{m.label}</span>
             {m.badge && <span className="ms__badge">{m.badge}</span>}
             {activeTab === m.id && !m.badge && <span className="ms__dot" />}

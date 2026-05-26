@@ -1,197 +1,123 @@
 import "./AdminDashboard.css";
-
-import { useEffect, useState }
-from "react";
-
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 function AdminDashboard() {
+  const [merchants, setMerchants] = useState([]);
+  const [filter, setFilter] = useState("all");
 
-  const [merchants, setMerchants] =
-    useState([]);
+  const fetchMerchants = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/admin/merchants");
+      setMerchants(response.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-  /* =========================
-     FETCH MERCHANTS
-  ========================= */
+  const handleApprove = async (id) => {
+    try {
+      await axios.put(`http://localhost:5000/api/admin/approve/${id}`);
+      fetchMerchants();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-  const fetchMerchants =
-    async () => {
+  const handleReject = async (id) => {
+    try {
+      await axios.put(`http://localhost:5000/api/admin/reject/${id}`);
+      fetchMerchants();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-      try {
+  useEffect(() => { fetchMerchants(); }, []);
 
-        const response =
-          await axios.get(
-            "http://localhost:5000/api/admin/merchants"
-          );
+  const filtered = merchants.filter((m) => {
+    if (filter === "approved") return m.isApproved === true;
+    if (filter === "pending")  return m.isApproved === false;
+    return true;
+  });
 
-        setMerchants(
-          response.data
-        );
-
-      } catch (error) {
-
-        console.log(error);
-      }
-    };
-
-  /* =========================
-     APPROVE
-  ========================= */
-
-  const handleApprove =
-    async (id) => {
-
-      try {
-
-        await axios.put(
-
-          `http://localhost:5000/api/admin/approve/${id}`
-        );
-
-        fetchMerchants();
-
-      } catch (error) {
-
-        console.log(error);
-      }
-    };
-
-  /* =========================
-     REJECT
-  ========================= */
-
-  const handleReject =
-    async (id) => {
-
-      try {
-
-        await axios.put(
-
-          `http://localhost:5000/api/admin/reject/${id}`
-        );
-
-        fetchMerchants();
-
-      } catch (error) {
-
-        console.log(error);
-      }
-    };
-
-  /* =========================
-     LOAD
-  ========================= */
-
-  useEffect(() => {
-
-    fetchMerchants();
-
-  }, []);
+  const counts = {
+    all:      merchants.length,
+    approved: merchants.filter((m) => m.isApproved).length,
+    pending:  merchants.filter((m) => !m.isApproved).length,
+  };
 
   return (
+    <div className="admin-content">
 
-    <div className="admin-page">
-
-      {/* SIDEBAR */}
-
-      <div className="admin-sidebar">
-
-        <h2>
-          OmniRetail
-        </h2>
-
+      {/* Stats */}
+      <div className="stats-row">
+        <div className="stat-card">
+          <span className="stat-num">{counts.all}</span>
+          <span className="stat-lbl">Total Merchants</span>
+        </div>
+        <div className="stat-card stat-green">
+          <span className="stat-num">{counts.approved}</span>
+          <span className="stat-lbl">Approved</span>
+        </div>
+        <div className="stat-card stat-amber">
+          <span className="stat-num">{counts.pending}</span>
+          <span className="stat-lbl">Pending</span>
+        </div>
       </div>
 
-      {/* CONTENT */}
+      {/* Filter Tabs */}
+      <div className="filter-tabs">
+        {["all", "approved", "pending"].map((f) => (
+          <button
+            key={f}
+            className={`tab-btn ${filter === f ? "tab-active" : ""}`}
+            onClick={() => setFilter(f)}
+          >
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+            <span className="tab-count">{counts[f]}</span>
+          </button>
+        ))}
+      </div>
 
-      <div className="admin-content">
-
-        <h1>
-          Merchant Approvals
-        </h1>
-
-        <div className="merchant-list">
-
-          {merchants.map(
-            (merchant) => (
-
-            <div
-              className="merchant-card"
-
-              key={merchant._id}
-            >
-
-              <div>
-
-                <h2>
-                  {
-                    merchant.restaurantName
-                  }
-                </h2>
-
-                <p>
-                  {
-                    merchant.email
-                  }
-                </p>
-
-                <p>
-                  {
-                    merchant.phoneNumber
-                  }
-                </p>
-
-                <span
-                  className={
-                    merchant.isApproved
-                    ? "approved"
-                    : "pending"
-                  }
-                >
-
-                  {
-                    merchant.isApproved
-                    ? "Approved"
-                    : "Pending"
-                  }
-
-                </span>
-
-              </div>
-
-              <div className="action-buttons">
-
-                <button
-                  className="approve-btn"
-
-                  onClick={() =>
-                    handleApprove(
-                      merchant._id
-                    )
-                  }
-                >
-                  Approve
-                </button>
-
-                <button
-                  className="reject-btn"
-
-                  onClick={() =>
-                    handleReject(
-                      merchant._id
-                    )
-                  }
-                >
-                  Reject
-                </button>
-
-              </div>
-
-            </div>
-          ))}
-
-        </div>
-
+      {/* Table */}
+      <div className="merchant-table-wrap">
+        <table className="merchant-table">
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Restaurant</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((merchant, i) => (
+              <tr key={merchant._id}>
+                <td className="row-num">{i + 1}</td>
+                <td className="row-name">{merchant.restaurantName}</td>
+                <td className="row-muted">{merchant.email}</td>
+                <td className="row-muted">{merchant.phoneNumber}</td>
+                <td>
+                  <span className={merchant.isApproved ? "badge-approved" : "badge-pending"}>
+                    {merchant.isApproved ? "Approved" : "Pending"}
+                  </span>
+                </td>
+                <td>
+                  <div className="action-btns">
+                    <button className="btn-approve" onClick={() => handleApprove(merchant._id)}>Approve</button>
+                    <button className="btn-reject"  onClick={() => handleReject(merchant._id)}>Reject</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr><td colSpan="6" className="empty-row">No merchants found.</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
     </div>
