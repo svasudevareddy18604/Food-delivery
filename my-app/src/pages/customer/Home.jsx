@@ -618,7 +618,7 @@ export default function Home() {
       {/* ── FOOTER ── */}
       <footer className="address-strip">
         <div className="address-strip__inner">
-          <span className="address-strip__logo">OmniRetail</span>
+          <span className="address-strip__logo">Foodie</span>
           <div className="address-strip__links">
             <a href="/about">About</a>
             <a href="/careers">Careers</a>
@@ -626,7 +626,7 @@ export default function Home() {
             <a href="/privacy">Privacy</a>
           </div>
           <p className="address-strip__addr">
-            📍 Infotact Solutions &amp; Co., Bengaluru, Karnataka 560001 · support@omniretail.in
+            📍 Infotact Solutions &amp; Co., Bengaluru, Karnataka 560001 · support@foodie.in
           </p>
         </div>
       </footer>

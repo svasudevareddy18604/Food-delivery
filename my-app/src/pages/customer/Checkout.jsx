@@ -6,7 +6,6 @@ import "./Checkout.css";
 
 const API = "http://localhost:5000/api/checkout";
 
-/* ── load Razorpay script once ── */
 function loadRazorpay() {
   return new Promise((resolve) => {
     if (window.Razorpay) return resolve(true);
@@ -18,7 +17,6 @@ function loadRazorpay() {
   });
 }
 
-/* ── small step indicator ── */
 function Steps({ step }) {
   const labels = ["Delivery", "Payment", "Review"];
   return (
@@ -36,17 +34,14 @@ function Steps({ step }) {
 
 export default function Checkout() {
   const navigate = useNavigate();
-
-  /* ── cart + user ── */
   const [cart,    setCart]  = useState([]);
   const [user,    setUser]  = useState(null);
-  const [step,    setStep]  = useState(0);   // 0=delivery 1=payment 2=review
+  const [step,    setStep]  = useState(0);
   const [loading, setLoad]  = useState(false);
   const [error,   setError] = useState("");
-
-  /* ── form ── */
-  const [form, setForm] = useState({ name: "", phone: "", address: "" });
-  const [payMethod, setPay] = useState("COD"); // COD | ONLINE
+  const [mounted, setMounted] = useState(false);
+  const [form,    setForm]  = useState({ name: "", phone: "", address: "" });
+  const [payMethod, setPay] = useState("COD");
 
   useEffect(() => {
     const c = JSON.parse(localStorage.getItem("cart") || "[]");
@@ -54,32 +49,29 @@ export default function Checkout() {
     setCart(c);
     setUser(u);
     if (u) setForm(f => ({ ...f, name: u.name || "", phone: u.phone || "" }));
+    setTimeout(() => setMounted(true), 60);
   }, []);
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
-  const subtotal  = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-  const delivery  = cart.length ? 40 : 0;
-  const total     = subtotal + delivery;
-  const totalQty  = cart.reduce((s, i) => s + i.quantity, 0);
-
-  /* merchantId from first cart item */
+  const subtotal   = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const delivery   = cart.length ? 40 : 0;
+  const total      = subtotal + delivery;
+  const totalQty   = cart.reduce((s, i) => s + i.quantity, 0);
   const merchantId = cart[0]?.restaurantId || cart[0]?.merchantId || "";
 
-  /* ── validation ── */
   const validateDelivery = () => {
-    if (!form.name.trim())    return setError("Please enter your full name."),    false;
-    if (!form.phone.trim())   return setError("Please enter your phone number."), false;
-    if (!form.address.trim()) return setError("Please enter delivery address."),  false;
+    if (!form.name.trim())    { setError("Please enter your full name.");     return false; }
+    if (!form.phone.trim())   { setError("Please enter your phone number.");  return false; }
+    if (!form.address.trim()) { setError("Please enter delivery address.");   return false; }
     return true;
   };
 
-  /* ── place order ── */
   const placeOrder = async () => {
     setError("");
     if (!validateDelivery()) return;
-    if (!user?._id) return setError("Please sign in to place an order.");
-    if (!merchantId) return setError("Cart is missing restaurant info.");
+    if (!user?._id)   return setError("Please sign in to place an order.");
+    if (!merchantId)  return setError("Cart is missing restaurant info.");
 
     setLoad(true);
     try {
@@ -93,20 +85,15 @@ export default function Checkout() {
       };
 
       const { data } = await axios.post(`${API}/create-order`, payload);
-
       if (!data.success) throw new Error(data.message);
 
-      /* ── COD ── */
       if (payMethod === "COD") {
         localStorage.removeItem("cart");
         window.dispatchEvent(new Event("cart-updated"));
-        navigate(
-  `/order-success/${data.orderId}`
-);
+        navigate(`/order-success/${data.orderId}`);
         return;
       }
 
-      /* ── ONLINE / Razorpay ── */
       const ok = await loadRazorpay();
       if (!ok) throw new Error("Razorpay SDK failed to load.");
 
@@ -115,89 +102,102 @@ export default function Checkout() {
         amount:      data.amount,
         currency:    data.currency,
         order_id:    data.razorpayOrderId,
-        name:        "OmniRetail",
+        name:        "Foodie",
         description: `Order #${data.orderId}`,
-        prefill: {
-          name:    form.name,
-          contact: form.phone,
-          email:   user.email || "",
-        },
-        theme: { color: "#ff6b2b" },
-
+        prefill:     { name: form.name, contact: form.phone, email: user.email || "" },
+        theme:       { color: "#ff6b2b" },
         handler: async (response) => {
           try {
             const verify = await axios.post(`${API}/verify-payment`, {
-              orderId:            data.orderId,
-              razorpayOrderId:    response.razorpay_order_id,
-              razorpayPaymentId:  response.razorpay_payment_id,
-              razorpaySignature:  response.razorpay_signature,
+              orderId:           data.orderId,
+              razorpayOrderId:   response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
             });
             if (verify.data.success) {
               localStorage.removeItem("cart");
               window.dispatchEvent(new Event("cart-updated"));
-              navigate(
-  `/order-success/${data.orderId}`
-);
+              navigate(`/order-success/${data.orderId}`);
             } else {
               setError("Payment verification failed. Contact support.");
             }
-          } catch {
-            setError("Payment verification error.");
-          }
+          } catch { setError("Payment verification error."); }
         },
-
         modal: { ondismiss: () => setLoad(false) },
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-      return; // don't set loading false — modal is open
-
+      new window.Razorpay(options).open();
+      return;
     } catch (e) {
       setError(e.response?.data?.message || e.message || "Something went wrong.");
     }
     setLoad(false);
   };
 
+  const imgSrc = (img) => img
+    ? img.startsWith("http") ? img : `http://localhost:5000${img}`
+    : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=120&auto=format&fit=crop";
+
   if (!cart.length) return (
-    <div className="ck-page">
+    <div className="ck ck--in">
       <Header />
-      <div className="ck-empty">
-        <span>🛒</span>
+      <div className="ck__empty">
+        <div className="ck__empty-ring">🛒</div>
         <h2>Your cart is empty</h2>
-        <button onClick={() => navigate("/")}>Browse Restaurants</button>
+        <p>Add some delicious items before checking out.</p>
+        <button className="ck__empty-cta" onClick={() => navigate("/")}>
+          Browse Restaurants
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
       </div>
     </div>
   );
 
   return (
-    <div className="ck-page">
+    <div className={`ck ${mounted ? "ck--in" : ""}`}>
       <Header />
 
-      <div className="ck-wrap">
-        <div className="ck-head">
-          <h1>Checkout</h1>
-          <p>{totalQty} item{totalQty > 1 ? "s" : ""} · ₹{total.toLocaleString()}</p>
+      {/* ── HERO ── */}
+      <div className="ck__hero">
+        <div className="ck__hero-inner">
+          <div>
+            <div className="ck__badge">✦ Secure checkout</div>
+            <h1 className="ck__title">Almost <em>there!</em></h1>
+            <p className="ck__sub">{totalQty} item{totalQty > 1 ? "s" : ""} · Grand Total ₹{total.toLocaleString()}</p>
+          </div>
+          <div className="ck__stats">
+            {[
+              { v: totalQty, l: "Items" },
+              { v: `₹${subtotal.toLocaleString()}`, l: "Subtotal" },
+              { v: "~30 min", l: "ETA" },
+            ].map(({ v, l }) => (
+              <div className="ck__stat" key={l}>
+                <strong>{v}</strong>
+                <span>{l}</span>
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
 
+      <div className="ck__wrap">
         <Steps step={step} />
 
-        <div className="ck-layout">
+        <div className="ck__layout">
 
-          {/* ── LEFT: form steps ── */}
-          <div className="ck-form">
+          {/* ── LEFT FORM ── */}
+          <div className="ck__form">
 
             {/* STEP 0 — Delivery */}
-            <div className={`ck-card ${step === 0 ? "ck-card--active" : ""}`}>
-              <div className="ck-card__head" onClick={() => setStep(0)}>
-                <div className="ck-card__num">{step > 0 ? "✓" : "1"}</div>
+            <div className={`ck__card ${step === 0 ? "ck__card--active" : ""}`}>
+              <div className="ck__card-head" onClick={() => setStep(0)}>
+                <div className="ck__card-num">{step > 0 ? "✓" : "1"}</div>
                 <h2>Delivery Details</h2>
-                {step > 0 && <span className="ck-card__edit">Edit</span>}
+                {step > 0 && <span className="ck__card-edit">Edit</span>}
               </div>
-
               {step === 0 && (
-                <div className="ck-card__body">
-                  <div className="ck-row">
+                <div className="ck__card-body">
+                  <div className="ck__row">
                     <label>Full Name *
                       <input value={form.name} onChange={e => set("name", e.target.value)} placeholder="John Doe" />
                     </label>
@@ -205,88 +205,87 @@ export default function Checkout() {
                       <input value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="+91 98765 43210" />
                     </label>
                   </div>
-                  <label className="ck-full">Delivery Address *
+                  <label className="ck__full">Delivery Address *
                     <textarea rows={3} value={form.address} onChange={e => set("address", e.target.value)}
                       placeholder="House no., street, area, city, pincode…" />
                   </label>
-                  {error && step === 0 && <p className="ck-error">{error}</p>}
-                  <button className="ck-btn" onClick={() => { if (validateDelivery()) { setError(""); setStep(1); } }}>
+                  {error && <p className="ck__error">{error}</p>}
+                  <button className="ck__btn" onClick={() => { if (validateDelivery()) { setError(""); setStep(1); } }}>
                     Continue to Payment
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </button>
                 </div>
               )}
             </div>
 
             {/* STEP 1 — Payment */}
-            <div className={`ck-card ${step === 1 ? "ck-card--active" : ""} ${step < 1 ? "ck-card--locked" : ""}`}>
-              <div className="ck-card__head" onClick={() => step >= 1 && setStep(1)}>
-                <div className="ck-card__num">{step > 1 ? "✓" : "2"}</div>
+            <div className={`ck__card ${step === 1 ? "ck__card--active" : ""} ${step < 1 ? "ck__card--locked" : ""}`}>
+              <div className="ck__card-head" onClick={() => step >= 1 && setStep(1)}>
+                <div className="ck__card-num">{step > 1 ? "✓" : "2"}</div>
                 <h2>Payment Method</h2>
-                {step > 1 && <span className="ck-card__edit">Edit</span>}
+                {step > 1 && <span className="ck__card-edit">Edit</span>}
               </div>
-
               {step === 1 && (
-                <div className="ck-card__body">
-                  <div className="ck-pay-opts">
+                <div className="ck__card-body">
+                  <div className="ck__pay-opts">
                     {[
-                      { id: "COD",    label: "Cash on Delivery", icon: "💵", sub: "Pay when your order arrives" },
-                      { id: "ONLINE", label: "Pay Online",        icon: "💳", sub: "UPI, Cards, Net Banking via Razorpay" },
+                      { id: "COD",    icon: "💵", label: "Cash on Delivery",   sub: "Pay when your order arrives" },
+                      { id: "ONLINE", icon: "💳", label: "Pay Online",          sub: "UPI, Cards, Net Banking via Razorpay" },
                     ].map(opt => (
-                      <button
-                        key={opt.id}
-                        className={`ck-pay-opt ${payMethod === opt.id ? "ck-pay-opt--active" : ""}`}
-                        onClick={() => setPay(opt.id)}
-                      >
-                        <span className="ck-pay-opt__icon">{opt.icon}</span>
+                      <button key={opt.id}
+                        className={`ck__pay-opt ${payMethod === opt.id ? "ck__pay-opt--active" : ""}`}
+                        onClick={() => setPay(opt.id)}>
+                        <span className="ck__pay-icon">{opt.icon}</span>
                         <div>
                           <strong>{opt.label}</strong>
                           <small>{opt.sub}</small>
                         </div>
-                        <div className="ck-pay-opt__radio" />
+                        <div className="ck__pay-radio" />
                       </button>
                     ))}
                   </div>
-                  <button className="ck-btn" onClick={() => setStep(2)}>Review Order</button>
+                  <button className="ck__btn" onClick={() => setStep(2)}>
+                    Review Order
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
                 </div>
               )}
             </div>
 
             {/* STEP 2 — Review */}
-            <div className={`ck-card ${step === 2 ? "ck-card--active" : ""} ${step < 2 ? "ck-card--locked" : ""}`}>
-              <div className="ck-card__head" onClick={() => step >= 2 && setStep(2)}>
-                <div className="ck-card__num">3</div>
+            <div className={`ck__card ${step === 2 ? "ck__card--active" : ""} ${step < 2 ? "ck__card--locked" : ""}`}>
+              <div className="ck__card-head" onClick={() => step >= 2 && setStep(2)}>
+                <div className="ck__card-num">3</div>
                 <h2>Review & Place Order</h2>
               </div>
-
               {step === 2 && (
-                <div className="ck-card__body">
-                  {/* delivery summary */}
-                  <div className="ck-review-row">
+                <div className="ck__card-body">
+                  <div className="ck__review-row">
                     <span>📍 Delivering to</span>
                     <strong>{form.address}</strong>
                   </div>
-                  <div className="ck-review-row">
+                  <div className="ck__review-row">
                     <span>💳 Payment</span>
                     <strong>{payMethod === "COD" ? "Cash on Delivery" : "Online (Razorpay)"}</strong>
                   </div>
 
-                  {/* items */}
-                  <div className="ck-items">
+                  <p className="ck__items-label">Your Items</p>
+                  <div className="ck__items">
                     {cart.map(i => (
-                      <div className="ck-item" key={i._id}>
-                        <img src={i.image ? `http://localhost:5000${i.image}` : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=120&auto=format&fit=crop"} alt={i.name} />
-                        <span className="ck-item__name">{i.name}</span>
-                        <span className="ck-item__qty">×{i.quantity}</span>
-                        <span className="ck-item__price">₹{(i.price * i.quantity).toLocaleString()}</span>
+                      <div className="ck__item" key={i._id}>
+                        <img src={imgSrc(i.image)} alt={i.name} />
+                        <span className="ck__item-name">{i.name}</span>
+                        <span className="ck__item-qty">×{i.quantity}</span>
+                        <span className="ck__item-price">₹{(i.price * i.quantity).toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
 
-                  {error && <p className="ck-error">{error}</p>}
+                  {error && <p className="ck__error">{error}</p>}
 
-                  <button className="ck-btn ck-btn--place" onClick={placeOrder} disabled={loading}>
-                    {loading ? <span className="ck-spinner" /> : null}
-                    {loading ? "Processing…" : payMethod === "COD" ? "Place Order" : "Pay ₹" + total.toLocaleString()}
+                  <button className="ck__btn ck__btn--place" onClick={placeOrder} disabled={loading}>
+                    {loading && <span className="ck__spinner" />}
+                    {loading ? "Processing…" : payMethod === "COD" ? "Place Order" : `Pay ₹${total.toLocaleString()}`}
                   </button>
                 </div>
               )}
@@ -294,21 +293,32 @@ export default function Checkout() {
 
           </div>
 
-          {/* ── RIGHT: order summary ── */}
-          <aside className="ck-summary">
-            <h2>Order Summary</h2>
-            <div className="ck-summary__items">
-              {cart.map(i => (
-                <div className="ck-summary__item" key={i._id}>
-                  <span className="ck-summary__item-name">{i.name} <em>×{i.quantity}</em></span>
-                  <span>₹{(i.price * i.quantity).toLocaleString()}</span>
-                </div>
-              ))}
+          {/* ── SUMMARY SIDEBAR ── */}
+          <aside className="ck__summary">
+            <div className="ck__summary-inner">
+              <h2 className="ck__summary-title">Order Summary</h2>
+              <div className="ck__summary-items">
+                {cart.map(i => (
+                  <div className="ck__summary-item" key={i._id}>
+                    <span className="ck__summary-name">{i.name} <em>×{i.quantity}</em></span>
+                    <span>₹{(i.price * i.quantity).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="ck__summary-divider" />
+              <div className="ck__summary-row"><span>Subtotal</span><span>₹{subtotal.toLocaleString()}</span></div>
+              <div className="ck__summary-row"><span>Delivery fee</span><span>₹{delivery}</span></div>
+              <div className="ck__summary-divider" />
+              <div className="ck__summary-total">
+                <span>Grand Total</span>
+                <span className="ck__summary-amount">₹{total.toLocaleString()}</span>
+              </div>
+              <div className="ck__trust">
+                {["🔒 Secure checkout", "🚀 Fast delivery", "✅ Easy returns"].map(b => (
+                  <span key={b}>{b}</span>
+                ))}
+              </div>
             </div>
-            <div className="ck-summary__divider" />
-            <div className="ck-summary__row"><span>Subtotal</span><span>₹{subtotal.toLocaleString()}</span></div>
-            <div className="ck-summary__row"><span>Delivery fee</span><span>₹{delivery}</span></div>
-            <div className="ck-summary__row ck-summary__row--total"><span>Grand Total</span><span>₹{total.toLocaleString()}</span></div>
           </aside>
 
         </div>
