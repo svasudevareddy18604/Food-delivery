@@ -7,17 +7,23 @@ import "./Checkout.css";
 const API_URL = import.meta.env.VITE_API_URL;
 const API     = `${API_URL}/api/checkout`;
 
+/* ══════════════════════════════════════════
+   RAZORPAY LOADER
+══════════════════════════════════════════ */
 function loadRazorpay() {
   return new Promise((resolve) => {
     if (window.Razorpay) return resolve(true);
-    const s = document.createElement("script");
-    s.src     = "https://checkout.razorpay.com/v1/checkout.js";
-    s.onload  = () => resolve(true);
-    s.onerror = () => resolve(false);
+    const s     = document.createElement("script");
+    s.src       = "https://checkout.razorpay.com/v1/checkout.js";
+    s.onload    = () => resolve(true);
+    s.onerror   = () => resolve(false);
     document.body.appendChild(s);
   });
 }
 
+/* ══════════════════════════════════════════
+   STEPS INDICATOR
+══════════════════════════════════════════ */
 function Steps({ step }) {
   const labels = ["Delivery", "Payment", "Review"];
   return (
@@ -33,54 +39,160 @@ function Steps({ step }) {
   );
 }
 
+/* ══════════════════════════════════════════
+   ADDRESS CARD (saved address selector)
+══════════════════════════════════════════ */
+function AddressCard({ addr, selected, onSelect }) {
+  const icons = {
+    Work:  (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+      </svg>
+    ),
+    Home:  (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    ),
+    Other: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
+      </svg>
+    ),
+  };
+  const fullText = [addr.line1, addr.line2, addr.city, addr.pincode ? `- ${addr.pincode}` : ""]
+    .filter(Boolean).join(", ");
+
+  return (
+    <button
+      type="button"
+      className={`ck-addr-card ${selected ? "ck-addr-card--selected" : ""}`}
+      onClick={onSelect}
+    >
+      <div className="ck-addr-card__radio">
+        <div className="ck-addr-card__radio-dot" />
+      </div>
+      <div className="ck-addr-card__icon">
+        {icons[addr.label] || icons.Other}
+      </div>
+      <div className="ck-addr-card__body">
+        <div className="ck-addr-card__top">
+          <span className="ck-addr-card__label">{addr.label}</span>
+          {addr.isDefault && <span className="ck-addr-card__default">Default</span>}
+        </div>
+        <p className="ck-addr-card__text">{fullText}</p>
+      </div>
+    </button>
+  );
+}
+
+/* ══════════════════════════════════════════
+   MAIN CHECKOUT
+══════════════════════════════════════════ */
 export default function Checkout() {
   const navigate = useNavigate();
+
   const [cart,      setCart]    = useState([]);
   const [user,      setUser]    = useState(null);
   const [step,      setStep]    = useState(0);
   const [loading,   setLoad]    = useState(false);
   const [error,     setError]   = useState("");
   const [mounted,   setMounted] = useState(false);
-  const [form,      setForm]    = useState({ name: "", phone: "", address: "" });
   const [payMethod, setPay]     = useState("COD");
 
+  /* Delivery form fields */
+  const [form, setForm] = useState({ name: "", phone: "", address: "" });
+
+  /* Address mode: "saved" | "manual" */
+  const [addrMode,     setAddrMode]     = useState("saved");
+  const [savedAddrs,   setSavedAddrs]   = useState([]);
+  const [selectedAddr, setSelectedAddr] = useState(null); // index into savedAddrs
+
+  /* ── Init ── */
   useEffect(() => {
-    const c = JSON.parse(localStorage.getItem("cart") || "[]");
-    const u = JSON.parse(localStorage.getItem("user") || "null");
+    const c = JSON.parse(localStorage.getItem("cart")  || "[]");
+    const u = JSON.parse(localStorage.getItem("user")  || "null");
     setCart(c);
     setUser(u);
-    /* prefill name + phone from user profile */
-    if (u) setForm(f => ({ ...f, name: u.name || "", phone: u.phoneNumber || "" }));
+
+    if (u) {
+      setForm(f => ({ ...f, name: u.name || "", phone: u.phoneNumber || "" }));
+
+      const addrs = u.deliveryAddresses || [];
+      setSavedAddrs(addrs);
+
+      if (addrs.length > 0) {
+        /* Auto-select default, else first */
+        const defIdx = addrs.findIndex(a => a.isDefault);
+        const idx    = defIdx >= 0 ? defIdx : 0;
+        setSelectedAddr(idx);
+        setForm(f => ({ ...f, address: buildAddressString(addrs[idx]) }));
+        setAddrMode("saved");
+      } else {
+        setAddrMode("manual");
+      }
+    }
+
     setTimeout(() => setMounted(true), 60);
   }, []);
 
+  function buildAddressString(addr) {
+    return [addr.line1, addr.line2, addr.city, addr.pincode]
+      .filter(Boolean).join(", ");
+  }
+
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
+  /* ── When saved address is selected ── */
+  function handleSelectSaved(idx) {
+    setSelectedAddr(idx);
+    setForm(f => ({ ...f, address: buildAddressString(savedAddrs[idx]) }));
+  }
+
+  /* ── Switch modes ── */
+  function handleSetMode(mode) {
+    setAddrMode(mode);
+    if (mode === "saved" && selectedAddr !== null && savedAddrs[selectedAddr]) {
+      setForm(f => ({ ...f, address: buildAddressString(savedAddrs[selectedAddr]) }));
+    } else if (mode === "manual") {
+      setForm(f => ({ ...f, address: "" }));
+    }
+  }
+
+  /* ── Totals ── */
   const subtotal   = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const delivery   = cart.length ? 40 : 0;
   const total      = subtotal + delivery;
   const totalQty   = cart.reduce((s, i) => s + i.quantity, 0);
   const merchantId = cart[0]?.restaurantId || cart[0]?.merchantId || "";
 
+  /* ── Validation ── */
   const validateDelivery = () => {
     if (!form.name.trim())    { setError("Please enter your full name.");    return false; }
     if (!form.phone.trim())   { setError("Please enter your phone number."); return false; }
-    if (!form.address.trim()) { setError("Please enter delivery address.");  return false; }
+    if (addrMode === "saved" && selectedAddr === null) {
+      setError("Please select a delivery address."); return false;
+    }
+    if (!form.address.trim()) { setError("Please enter a delivery address."); return false; }
     return true;
   };
 
+  /* ── Place order ── */
   const placeOrder = async () => {
     setError("");
     if (!validateDelivery()) return;
-    if (!user?._id)  return setError("Please sign in to place an order.");
-    if (!merchantId) return setError("Cart is missing restaurant info.");
+    if (!user?._id)  { setError("Please sign in to place an order."); return; }
+    if (!merchantId) { setError("Cart is missing restaurant info."); return; }
 
     setLoad(true);
     try {
       const payload = {
         customerId:    user._id,
         merchantId,
-        items:         cart.map(i => ({ foodId: i._id, name: i.name, image: i.image, price: i.price, quantity: i.quantity })),
+        items:         cart.map(i => ({
+          foodId: i._id, name: i.name, image: i.image,
+          price:  i.price, quantity: i.quantity,
+        })),
         address:       form.address,
         customerName:  form.name,
         customerPhone: form.phone,
@@ -142,6 +254,7 @@ export default function Checkout() {
     ? img.startsWith("http") ? img : `${API_URL}${img}`
     : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=120&auto=format&fit=crop";
 
+  /* ── Empty cart ── */
   if (!cart.length) return (
     <div className="ck ck--in">
       <Header />
@@ -191,32 +304,114 @@ export default function Checkout() {
 
         <div className="ck__layout">
 
-          {/* ── LEFT FORM ── */}
+          {/* ════════════════════════════════
+              LEFT — FORM STEPS
+          ════════════════════════════════ */}
           <div className="ck__form">
 
-            {/* STEP 0 — Delivery */}
+            {/* ── STEP 0 — Delivery Details ── */}
             <div className={`ck__card ${step === 0 ? "ck__card--active" : ""}`}>
               <div className="ck__card-head" onClick={() => setStep(0)}>
                 <div className="ck__card-num">{step > 0 ? "✓" : "1"}</div>
                 <h2>Delivery Details</h2>
                 {step > 0 && <span className="ck__card-edit">Edit</span>}
               </div>
+
               {step === 0 && (
                 <div className="ck__card-body">
+
+                  {/* Name + Phone */}
                   <div className="ck__row">
                     <label>Full Name *
-                      <input value={form.name} onChange={e => set("name", e.target.value)} placeholder="John Doe" />
+                      <input
+                        value={form.name}
+                        onChange={e => set("name", e.target.value)}
+                        placeholder="John Doe"
+                      />
                     </label>
                     <label>Phone *
-                      <input value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="+91 98765 43210" />
+                      <input
+                        value={form.phone}
+                        onChange={e => set("phone", e.target.value)}
+                        placeholder="+91 98765 43210"
+                      />
                     </label>
                   </div>
-                  <label className="ck__full">Delivery Address *
-                    <textarea rows={3} value={form.address} onChange={e => set("address", e.target.value)}
-                      placeholder="House no., street, area, city, pincode…" />
-                  </label>
+
+                  {/* ── ADDRESS SECTION ── */}
+                  <div className="ck__addr-section">
+                    <div className="ck__addr-section-label">Delivery Address *</div>
+
+                    {/* Mode toggle — only show if user has saved addresses */}
+                    {savedAddrs.length > 0 && (
+                      <div className="ck__addr-toggle">
+                        <button
+                          type="button"
+                          className={`ck__addr-toggle-btn ${addrMode === "saved" ? "ck__addr-toggle-btn--active" : ""}`}
+                          onClick={() => handleSetMode("saved")}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                            <circle cx="12" cy="9" r="2.5"/>
+                          </svg>
+                          Saved Addresses
+                        </button>
+                        <button
+                          type="button"
+                          className={`ck__addr-toggle-btn ${addrMode === "manual" ? "ck__addr-toggle-btn--active" : ""}`}
+                          onClick={() => handleSetMode("manual")}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                          Enter Manually
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Saved addresses list */}
+                    {addrMode === "saved" && savedAddrs.length > 0 && (
+                      <div className="ck__addr-list">
+                        {savedAddrs.map((addr, idx) => (
+                          <AddressCard
+                            key={addr._id || idx}
+                            addr={addr}
+                            selected={selectedAddr === idx}
+                            onSelect={() => handleSelectSaved(idx)}
+                          />
+                        ))}
+                        <button
+                          type="button"
+                          className="ck__addr-add-new"
+                          onClick={() => handleSetMode("manual")}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 5v14M5 12h14"/>
+                          </svg>
+                          Use a different address
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Manual textarea */}
+                    {(addrMode === "manual" || savedAddrs.length === 0) && (
+                      <textarea
+                        className="ck__addr-manual"
+                        rows={3}
+                        value={form.address}
+                        onChange={e => set("address", e.target.value)}
+                        placeholder="House no., street, area, city, pincode…"
+                      />
+                    )}
+                  </div>
+
                   {error && <p className="ck__error">{error}</p>}
-                  <button className="ck__btn" onClick={() => { if (validateDelivery()) { setError(""); setStep(1); } }}>
+
+                  <button
+                    className="ck__btn"
+                    onClick={() => { if (validateDelivery()) { setError(""); setStep(1); } }}
+                  >
                     Continue to Payment
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
@@ -226,7 +421,7 @@ export default function Checkout() {
               )}
             </div>
 
-            {/* STEP 1 — Payment */}
+            {/* ── STEP 1 — Payment ── */}
             <div className={`ck__card ${step === 1 ? "ck__card--active" : ""} ${step < 1 ? "ck__card--locked" : ""}`}>
               <div className="ck__card-head" onClick={() => step >= 1 && setStep(1)}>
                 <div className="ck__card-num">{step > 1 ? "✓" : "2"}</div>
@@ -262,11 +457,11 @@ export default function Checkout() {
               )}
             </div>
 
-            {/* STEP 2 — Review */}
+            {/* ── STEP 2 — Review ── */}
             <div className={`ck__card ${step === 2 ? "ck__card--active" : ""} ${step < 2 ? "ck__card--locked" : ""}`}>
               <div className="ck__card-head" onClick={() => step >= 2 && setStep(2)}>
                 <div className="ck__card-num">3</div>
-                <h2>Review & Place Order</h2>
+                <h2>Review &amp; Place Order</h2>
               </div>
               {step === 2 && (
                 <div className="ck__card-body">
@@ -276,7 +471,7 @@ export default function Checkout() {
                   </div>
                   <div className="ck__review-row">
                     <span>📞 Contact</span>
-                    <strong>{form.phone}</strong>
+                    <strong>{form.name} · {form.phone}</strong>
                   </div>
                   <div className="ck__review-row">
                     <span>💳 Payment</span>
@@ -305,9 +500,11 @@ export default function Checkout() {
               )}
             </div>
 
-          </div>
+          </div>{/* end .ck__form */}
 
-          {/* ── SUMMARY SIDEBAR ── */}
+          {/* ════════════════════════════════
+              RIGHT — ORDER SUMMARY
+          ════════════════════════════════ */}
           <aside className="ck__summary">
             <div className="ck__summary-inner">
               <h2 className="ck__summary-title">Order Summary</h2>
