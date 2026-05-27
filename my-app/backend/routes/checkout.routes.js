@@ -22,7 +22,9 @@ const razorpay = new Razorpay({
 });
 
 /* =========================
-   HELPER
+   HELPER — GET CUSTOMER INFO
+   Falls back to DB if frontend
+   didn't send name / phone
 ========================= */
 
 const getCustomerInfo =
@@ -48,8 +50,7 @@ const getCustomerInfo =
 
       return {
 
-        customerName: "Customer",
-
+        customerName:  "Customer",
         customerPhone: "No contact",
 
       };
@@ -62,22 +63,22 @@ const getCustomerInfo =
    GENERATE ORDER NUMBER
 ========================= */
 
-const generateOrderNumber = () => {
+const generateOrderNumber = () =>
+  "ORD-" +
+  Date.now() +
+  "-" +
+  Math.floor(Math.random() * 1000);
 
-  return (
-    "ORD-" +
-    Date.now() +
-    "-" +
-    Math.floor(Math.random() * 1000)
-  );
-
-};
-
-/* =========================
-   CREATE ORDER
-========================= */
+/* ══════════════════════════════════════
+   POST /create-order
+   Accepts both COD and ONLINE payments.
+   customerName & customerPhone come
+   from the checkout form (already
+   pre-filled from the user's profile).
+══════════════════════════════════════ */
 
 router.post(
+
   "/create-order",
 
   async (req, res) => {
@@ -94,8 +95,9 @@ router.post(
         paymentMethod,
         totalAmount,
 
-        customerName,
-        customerPhone,
+        /* sent from Checkout.jsx form */
+        customerName:  nameFromForm,
+        customerPhone: phoneFromForm,
 
       } = req.body;
 
@@ -105,10 +107,10 @@ router.post(
 
       if (
 
-        !customerId ||
-        !merchantId ||
+        !customerId  ||
+        !merchantId  ||
         !items?.length ||
-        !address ||
+        !address     ||
         !totalAmount
 
       ) {
@@ -118,33 +120,40 @@ router.post(
           success: false,
 
           message:
-            "Missing required fields."
+            "Missing required fields.",
 
         });
 
       }
 
       /* =========================
-         CUSTOMER INFO
+         RESOLVE NAME & PHONE
+         Prefer form values; fall back
+         to the DB record so orders
+         always have contact info.
       ========================= */
 
-      const customerData =
-        await getCustomerInfo(customerId);
+      let customerName  = nameFromForm?.trim()  || "";
+      let customerPhone = phoneFromForm?.trim()  || "";
 
-      const name =
-        customerName ||
-        customerData.customerName;
+      if (!customerName || !customerPhone) {
 
-      const phone =
-        customerPhone ||
-        customerData.customerPhone;
+        const dbInfo =
+          await getCustomerInfo(customerId);
+
+        customerName  =
+          customerName  || dbInfo.customerName;
+
+        customerPhone =
+          customerPhone || dbInfo.customerPhone;
+
+      }
 
       /* =========================
          ORDER NUMBER
       ========================= */
 
-      const orderNumber =
-        generateOrderNumber();
+      const orderNumber = generateOrderNumber();
 
       /* =========================
          COD ORDER
@@ -152,31 +161,26 @@ router.post(
 
       if (paymentMethod === "COD") {
 
-        const order =
-          await Order.create({
+        const order = await Order.create({
 
-            orderNumber,
+          orderNumber,
 
-            customerId,
-            merchantId,
+          customerId,
+          merchantId,
 
-            items,
+          items,
+          address,
 
-            address,
+          customerName,
+          customerPhone,
 
-            customerName: name,
+          paymentMethod: "COD",
+          paymentStatus: "PENDING",
+          orderStatus:   "PLACED",
 
-            customerPhone: phone,
+          totalAmount,
 
-            paymentMethod: "COD",
-
-            paymentStatus: "PENDING",
-
-            orderStatus: "PLACED",
-
-            totalAmount,
-
-          });
+        });
 
         return res.status(201).json({
 
@@ -184,8 +188,7 @@ router.post(
 
           paymentMethod: "COD",
 
-          orderId: order._id,
-
+          orderId:     order._id,
           orderNumber,
 
         });
@@ -194,94 +197,68 @@ router.post(
 
       /* =========================
          ONLINE PAYMENT
+         Create Razorpay order first,
+         then persist our order doc.
       ========================= */
 
-      const rzpOrder =
-        await razorpay.orders.create({
+      const rzpOrder = await razorpay.orders.create({
 
-          amount:
-            Math.round(totalAmount * 100),
+        amount:   Math.round(totalAmount * 100),
+        currency: "INR",
+        receipt:  `receipt_${Date.now()}`,
 
-          currency: "INR",
+      });
 
-          receipt:
-            `receipt_${Date.now()}`,
+      const order = await Order.create({
 
-        });
+        orderNumber,
 
-      /* =========================
-         CREATE ONLINE ORDER
-      ========================= */
+        customerId,
+        merchantId,
 
-      const order =
-        await Order.create({
+        items,
+        address,
 
-          orderNumber,
+        customerName,
+        customerPhone,
 
-          customerId,
-          merchantId,
+        paymentMethod: "ONLINE",
+        paymentStatus: "PENDING",
+        orderStatus:   "PLACED",
 
-          items,
+        totalAmount,
 
-          address,
+        razorpayOrderId: rzpOrder.id,
 
-          customerName: name,
+      });
 
-          customerPhone: phone,
-
-          paymentMethod: "ONLINE",
-
-          paymentStatus: "PENDING",
-
-          orderStatus: "PLACED",
-
-          totalAmount,
-
-          razorpayOrderId:
-            rzpOrder.id,
-
-        });
-
-      /* =========================
-         RESPONSE
-      ========================= */
-
-      res.status(201).json({
+      return res.status(201).json({
 
         success: true,
 
         paymentMethod: "ONLINE",
 
-        orderId:
-          order._id,
-
+        orderId:         order._id,
         orderNumber,
 
-        razorpayOrderId:
-          rzpOrder.id,
+        razorpayOrderId: rzpOrder.id,
+        amount:          rzpOrder.amount,
+        currency:        rzpOrder.currency,
 
-        amount:
-          rzpOrder.amount,
-
-        currency:
-          rzpOrder.currency,
-
-        keyId:
-          process.env.RAZORPAY_KEY_ID,
+        keyId: process.env.RAZORPAY_KEY_ID,
 
       });
 
     } catch (err) {
 
       console.error(
-        "checkout/create-order:",
+        "❌ checkout/create-order:",
         err
       );
 
       res.status(500).json({
 
         success: false,
-
         message: err.message,
 
       });
@@ -289,13 +266,17 @@ router.post(
     }
 
   }
+
 );
 
-/* =========================
-   VERIFY PAYMENT
-========================= */
+/* ══════════════════════════════════════
+   POST /verify-payment
+   Verifies Razorpay HMAC signature and
+   marks the order as PAID.
+══════════════════════════════════════ */
 
 router.post(
+
   "/verify-payment",
 
   async (req, res) => {
@@ -307,99 +288,88 @@ router.post(
         orderId,
 
         razorpayOrderId,
-
         razorpayPaymentId,
-
         razorpaySignature,
 
       } = req.body;
 
       /* =========================
-         VERIFY SIGNATURE
+         VERIFY HMAC SIGNATURE
       ========================= */
 
-      const expected =
-        crypto
+      const expected = crypto
 
-          .createHmac(
+        .createHmac(
+          "sha256",
+          process.env.RAZORPAY_KEY_SECRET
+        )
 
-            "sha256",
+        .update(
+          `${razorpayOrderId}|${razorpayPaymentId}`
+        )
 
-            process.env
-              .RAZORPAY_KEY_SECRET
+        .digest("hex");
 
-          )
-
-          .update(
-            `${razorpayOrderId}|${razorpayPaymentId}`
-          )
-
-          .digest("hex");
-
-      if (
-        expected !==
-        razorpaySignature
-      ) {
+      if (expected !== razorpaySignature) {
 
         return res.status(400).json({
 
           success: false,
-
-          message:
-            "Invalid payment signature.",
+          message: "Invalid payment signature.",
 
         });
 
       }
 
       /* =========================
-         UPDATE ORDER
+         MARK ORDER AS PAID
       ========================= */
 
-      await Order.findByIdAndUpdate(
+      const order = await Order.findByIdAndUpdate(
 
         orderId,
 
         {
-
-          paymentStatus: "PAID",
-
+          paymentStatus:    "PAID",
           razorpayPaymentId,
-
         },
 
-        {
-
-          new: true,
-
-        }
+        { new: true }
 
       );
+
+      if (!order) {
+
+        return res.status(404).json({
+
+          success: false,
+          message: "Order not found.",
+
+        });
+
+      }
 
       /* =========================
          SUCCESS
       ========================= */
 
-      res.json({
+      return res.json({
 
         success: true,
-
-        message:
-          "Payment verified.",
+        message: "Payment verified.",
 
       });
 
     } catch (err) {
 
       console.error(
-        "checkout/verify-payment:",
+        "❌ checkout/verify-payment:",
         err
       );
 
       res.status(500).json({
 
         success: false,
-
         message: err.message,
 
       });
@@ -407,6 +377,7 @@ router.post(
     }
 
   }
+
 );
 
 module.exports = router;
