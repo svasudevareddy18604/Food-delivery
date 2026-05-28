@@ -43,7 +43,7 @@ function timeAgo(dateStr) {
 ══════════════════════════════ */
 function ReservationCard({ reservation, idx }) {
   const meta = STATUS_META[reservation.status] || STATUS_META.pending;
-  const restaurant = reservation.merchantId;
+  const restaurant = reservation.restaurantId;
 
   return (
     <div

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate }         from "react-router-dom";
 import axios                   from "axios";
 import MerchantSidebar         from "../../components/merchant/MerchantSidebar";
+import MerchantTopbar          from "../../components/merchant/MerchantTopbar";
 import "./MerchantBookings.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -90,8 +91,8 @@ function CancelModal({ booking, onConfirm, onClose }) {
    BOOKING CARD
 ══════════════════════════════ */
 function BookingCard({ booking, onConfirm, onCancel }) {
-  const meta       = STATUS_META[booking.status] || STATUS_META.pending;
-  const canAct     = booking.status === "pending";
+  const meta        = STATUS_META[booking.status] || STATUS_META.pending;
+  const canAct      = booking.status === "pending";
   const canComplete = booking.status === "confirmed";
 
   return (
@@ -173,25 +174,16 @@ function BookingCard({ booking, onConfirm, onCancel }) {
         <div className="mb-card__actions">
           {canAct && (
             <>
-              <button
-                className="mb-btn-confirm"
-                onClick={() => onConfirm(booking._id)}
-              >
+              <button className="mb-btn-confirm" onClick={() => onConfirm(booking._id)}>
                 ✓ Confirm
               </button>
-              <button
-                className="mb-btn-cancel"
-                onClick={() => onCancel(booking)}
-              >
+              <button className="mb-btn-cancel" onClick={() => onCancel(booking)}>
                 ✕ Cancel
               </button>
             </>
           )}
           {canComplete && (
-            <button
-              className="mb-btn-complete"
-              onClick={() => onConfirm(booking._id, "completed")}
-            >
+            <button className="mb-btn-complete" onClick={() => onConfirm(booking._id, "completed")}>
               ✓ Mark Complete
             </button>
           )}
@@ -304,13 +296,31 @@ export default function MerchantBookings() {
 
   return (
     <div className="mb-page">
+
+      {/* ── SIDEBAR — pass navigate so home/menu/etc. works ── */}
       <MerchantSidebar
         activeTab="bookings"
-        setActiveTab={() => {}}
+        setActiveTab={(tab) => {
+          // Map tab ids to their routes
+          const routes = {
+            home:      "/merchant/dashboard",
+            foods:     "/merchant/foods",
+            orders:    "/merchant/orders",
+            analytics: "/merchant/analytics",
+            settings:  "/merchant/settings",
+          };
+          if (routes[tab]) navigate(routes[tab]);
+        }}
         merchantName={merchantName}
       />
 
       <main className="mb-main">
+
+        {/* ── TOPBAR ── */}
+        <MerchantTopbar />
+
+        {/* ── CONTENT (padded area below topbar) ── */}
+        <div className="mb-content">
 
         {/* ── HEADER ── */}
         <div className="mb-header">
@@ -397,6 +407,7 @@ export default function MerchantBookings() {
             ))}
           </div>
         )}
+        </div> {/* end mb-content */}
       </main>
 
       {/* ── CANCEL MODAL ── */}

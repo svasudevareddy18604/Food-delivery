@@ -1,6 +1,6 @@
-/* ══════════════════════════════════════
+/* ============================================================
    MerchantBookings.css — fixed & polished
-══════════════════════════════════════ */
+   ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
@@ -14,13 +14,18 @@
 
 /* ── MAIN ── */
 .mb-main {
-  margin-left: 262px;    /* CRITICAL — sidebar is position:fixed so we offset manually */
+  margin-left: 262px;
   width: calc(100vw - 262px);
   min-width: 0;
-  padding: 32px 36px;
+  padding: 0;           /* topbar sits flush at top — no top padding */
   overflow-y: auto;
   overflow-x: hidden;
   box-sizing: border-box;
+}
+
+/* ── CONTENT AREA (below topbar) ── */
+.mb-content {
+  padding: 28px 36px;
 }
 
 /* ── HEADER ── */
@@ -170,11 +175,10 @@
 }
 
 /* ══════════════════════════════
-   BOOKING CARD — fully responsive
+   BOOKING CARD
 ══════════════════════════════ */
 .mb-card {
   display: grid;
-  /* customer | details | actions — fluid, no fixed mins */
   grid-template-columns: minmax(0, 220px) minmax(0, 1fr) minmax(0, 170px);
   align-items: center;
   gap: 0;
@@ -183,6 +187,7 @@
   border: 1.5px solid #f0f0f0;
   overflow: hidden;
   transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+  position: relative;
 }
 
 .mb-card:hover {
@@ -190,19 +195,6 @@
   border-color: #e5e7eb;
   transform: translateY(-1px);
 }
-
-/* coloured left accent via pseudo */
-.mb-card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  border-radius: 16px 0 0 16px;
-}
-
-.mb-card { position: relative; }
 
 .mb-card--pending   { border-left: 4px solid #f59e0b; }
 .mb-card--confirmed { border-left: 4px solid #10b981; }
@@ -231,12 +223,9 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  letter-spacing: 0.02em;
 }
 
-.mb-card__customer-info {
-  min-width: 0;
-}
+.mb-card__customer-info { min-width: 0; }
 
 .mb-card__customer-name {
   font-weight: 700;
@@ -377,28 +366,13 @@
   gap: 5px;
 }
 
-.mb-btn-confirm {
-  border: none;
-  background: #10b981;
-  color: #fff;
-}
+.mb-btn-confirm  { border: none; background: #10b981; color: #fff; }
+.mb-btn-confirm:hover  { opacity: 0.87; transform: scale(0.98); }
 
-.mb-btn-confirm:hover { opacity: 0.87; transform: scale(0.98); }
+.mb-btn-cancel   { border: 1.5px solid #ef4444; background: transparent; color: #ef4444; }
+.mb-btn-cancel:hover   { background: #fef2f2; transform: scale(0.98); }
 
-.mb-btn-cancel {
-  border: 1.5px solid #ef4444;
-  background: transparent;
-  color: #ef4444;
-}
-
-.mb-btn-cancel:hover { background: #fef2f2; transform: scale(0.98); }
-
-.mb-btn-complete {
-  border: none;
-  background: #6366f1;
-  color: #fff;
-}
-
+.mb-btn-complete { border: none; background: #6366f1; color: #fff; }
 .mb-btn-complete:hover { opacity: 0.87; transform: scale(0.98); }
 
 /* ══════════════════════════════
@@ -438,11 +412,7 @@
   margin-bottom: 22px;
 }
 
-.mb-cancel-modal__icon {
-  font-size: 1.8rem;
-  flex-shrink: 0;
-  line-height: 1;
-}
+.mb-cancel-modal__icon { font-size: 1.8rem; flex-shrink: 0; line-height: 1; }
 
 .mb-cancel-modal__head h3 {
   font-family: 'Syne', sans-serif;
@@ -452,11 +422,7 @@
   margin: 0 0 3px;
 }
 
-.mb-cancel-modal__head p {
-  font-size: 0.8rem;
-  color: #6b7280;
-  margin: 0;
-}
+.mb-cancel-modal__head p { font-size: 0.8rem; color: #6b7280; margin: 0; }
 
 .mb-cancel-modal__close {
   margin-left: auto;
@@ -474,7 +440,6 @@
   justify-content: center;
   transition: background 0.2s;
 }
-
 .mb-cancel-modal__close:hover { background: #e5e7eb; }
 
 .mb-cancel-modal__label {
@@ -486,7 +451,6 @@
   color: #374151;
   margin-bottom: 20px;
 }
-
 .mb-cancel-modal__label span { color: #ef4444; }
 
 .mb-cancel-modal__label textarea {
@@ -501,7 +465,6 @@
   outline: none;
   background: #fafafa;
 }
-
 .mb-cancel-modal__label textarea:focus { border-color: #ef4444; background: #fff; }
 
 .mb-cancel-modal__actions { display: flex; gap: 10px; }
@@ -519,7 +482,6 @@
   transition: all 0.2s;
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
-
 .mb-btn-ghost:hover { border-color: #374151; color: #374151; }
 
 .mb-btn-cancel-confirm {
@@ -538,8 +500,7 @@
   justify-content: center;
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
-
-.mb-btn-cancel-confirm:disabled { opacity: 0.45; cursor: not-allowed; }
+.mb-btn-cancel-confirm:disabled      { opacity: 0.45; cursor: not-allowed; }
 .mb-btn-cancel-confirm:not(:disabled):hover { opacity: 0.88; }
 
 /* ── SKELETON ── */
@@ -564,10 +525,9 @@
   padding: 64px 20px;
   color: #9ca3af;
 }
-
 .mb-empty span { font-size: 2.8rem; display: block; margin-bottom: 14px; }
-.mb-empty h3 { font-size: 1.05rem; font-weight: 700; color: #374151; margin: 0 0 6px; }
-.mb-empty p  { font-size: 0.85rem; margin: 0; }
+.mb-empty h3   { font-size: 1.05rem; font-weight: 700; color: #374151; margin: 0 0 6px; }
+.mb-empty p    { font-size: 0.85rem; margin: 0; }
 
 /* ── SPINNER ── */
 .mb-spinner {
@@ -579,7 +539,6 @@
   animation: mb-spin 0.7s linear infinite;
   display: inline-block;
 }
-
 @keyframes mb-spin { to { transform: rotate(360deg); } }
 
 /* ── TOAST ── */
@@ -598,7 +557,6 @@
   align-items: center;
   gap: 6px;
 }
-
 .mb-toast--success { background: #f0fdf4; color: #16a34a; border: 1.5px solid #bbf7d0; }
 .mb-toast--error   { background: #fef2f2; color: #dc2626; border: 1.5px solid #fecaca; }
 .mb-toast--info    { background: #eff6ff; color: #2563eb; border: 1.5px solid #bfdbfe; }
@@ -612,39 +570,27 @@
    RESPONSIVE
 ══════════════════════════════ */
 @media (max-width: 1100px) {
-  .mb-stats {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-  }
-
-  .mb-stat { padding: 12px 8px; }
+  .mb-stats { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .mb-stat  { padding: 12px 8px; }
   .mb-stat__value { font-size: 1.25rem; }
 }
 
 @media (max-width: 860px) {
-  .mb-main {
-    margin-left: 0;
-    width: 100vw;
-    padding: 20px 18px;
-  }
-
+  .mb-main  { margin-left: 0; width: 100vw; }
+  .mb-content { padding: 20px 18px; }
   .mb-stats { grid-template-columns: repeat(3, 1fr); }
 
-  .mb-card {
-    grid-template-columns: 1fr;
-  }
+  .mb-card  { grid-template-columns: 1fr; }
 
   .mb-card__customer {
     border-right: none;
     border-bottom: 1px solid #f3f4f6;
     padding: 16px 18px;
   }
-
   .mb-card__details {
     padding: 14px 18px;
     border-bottom: 1px solid #f3f4f6;
   }
-
   .mb-card__right {
     border-left: none;
     padding: 14px 18px;
@@ -653,14 +599,8 @@
     align-items: center;
     gap: 10px;
   }
-
   .mb-card__status-row { flex: 1; }
-
-  .mb-card__actions {
-    flex-direction: row;
-    flex: 1;
-    min-width: 200px;
-  }
+  .mb-card__actions    { flex-direction: row; flex: 1; min-width: 200px; }
 }
 
 @media (max-width: 560px) {
