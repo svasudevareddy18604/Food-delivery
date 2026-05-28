@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate }         from "react-router-dom";
-import axios                   from "axios";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import Header from "../../components/customer/Header";
 import "./CustomerReservation.css";
 
@@ -9,24 +9,23 @@ const API_URL = import.meta.env.VITE_API_URL;
 const STATUS_TABS = ["All", "Pending", "Confirmed", "Cancelled", "Completed"];
 
 const STATUS_META = {
-  pending:   { label: "Pending",   color: "#b45309", bg: "#fef3c7" },
-  confirmed: { label: "Confirmed", color: "#047857", bg: "#d1fae5" },
-  cancelled: { label: "Cancelled", color: "#b91c1c", bg: "#fee2e2" },
-  completed: { label: "Completed", color: "#4338ca", bg: "#e0e7ff" },
+  pending:   { label: "Pending",   color: "#ea580c", bg: "rgba(255,107,43,.1)",  border: "rgba(255,107,43,.25)" },
+  confirmed: { label: "Confirmed", color: "#059669", bg: "rgba(16,185,129,.1)",  border: "rgba(16,185,129,.25)" },
+  cancelled: { label: "Cancelled", color: "#dc2626", bg: "rgba(239,68,68,.1)",   border: "rgba(239,68,68,.25)"  },
+  completed: { label: "Completed", color: "#7c3aed", bg: "rgba(124,58,237,.1)",  border: "rgba(124,58,237,.25)" },
 };
 
 function formatDate(d) {
   if (!d) return "—";
   const [y, m, day] = d.split("-");
-  const months = ["Jan","Feb","Mar","Apr","May","Jun",
-                  "Jul","Aug","Sep","Oct","Nov","Dec"];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   return `${parseInt(day)} ${months[Number(m) - 1]} ${y}`;
 }
 
 function formatTime(t) {
   if (!t) return "—";
   const [h, m] = t.split(":").map(Number);
-  return `${h % 12 || 12}:${String(m).padStart(2,"0")} ${h >= 12 ? "PM" : "AM"}`;
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
 }
 
 function timeAgo(dateStr) {
@@ -42,106 +41,96 @@ function timeAgo(dateStr) {
 /* ══════════════════════════════
    RESERVATION CARD
 ══════════════════════════════ */
-function ReservationCard({ reservation }) {
+function ReservationCard({ reservation, idx }) {
   const meta = STATUS_META[reservation.status] || STATUS_META.pending;
   const restaurant = reservation.merchantId;
 
   return (
-    <div className={`cr-card cr-card--${reservation.status}`}>
+    <div
+      className={`rb-card rb-card--${reservation.status}`}
+      style={{ animationDelay: `${idx * 70}ms` }}
+    >
+      {/* ── CARD HEADER ── */}
+      <div className="rb-card__head">
+        <span className="rb-card__id">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <path d="M16 2v4M8 2v4M3 10h18"/>
+          </svg>
+          #{reservation._id?.slice(-8).toUpperCase()}
+        </span>
+        <span
+          className="rb-card__status"
+          style={{ color: meta.color, background: meta.bg, border: `1px solid ${meta.border}` }}
+        >
+          <span className="rb-card__status-dot" style={{ background: meta.color }} />
+          {meta.label}
+        </span>
+      </div>
 
-      {/* ── TOP ROW: restaurant + status ── */}
-      <div className="cr-card__top">
-        <div className="cr-card__restaurant">
-          <div className="cr-card__icon">🍽</div>
-          <div style={{ minWidth: 0 }}>
-            <p className="cr-card__name">
-              {restaurant?.restaurantName || restaurant?.name || "Restaurant"}
-            </p>
-            <p className="cr-card__booked">
-              Booked {timeAgo(reservation.createdAt)}
-            </p>
-          </div>
-        </div>
-
-        <div className="cr-card__status-wrap">
-          <span
-            className="cr-card__status"
-            style={{ color: meta.color, background: meta.bg }}
-          >
-            {meta.label}
-          </span>
-          <span className="cr-card__ref">
-            #{reservation._id?.slice(-6).toUpperCase()}
-          </span>
+      {/* ── RESTAURANT ROW ── */}
+      <div className="rb-card__restaurant">
+        <div className="rb-card__icon">🍽</div>
+        <div className="rb-card__rest-info">
+          <p className="rb-card__name">
+            {restaurant?.restaurantName || restaurant?.name || "Restaurant"}
+          </p>
+          <p className="rb-card__booked">Booked {timeAgo(reservation.createdAt)}</p>
         </div>
       </div>
 
-      {/* ── DETAIL GRID: date / time / guests ── */}
-      <div className="cr-card__details">
-        <div className="cr-card__detail">
-          <span className="cr-card__detail-icon">📅</span>
-          <span className="cr-card__detail-val">{formatDate(reservation.date)}</span>
-          <span className="cr-card__detail-key">Date</span>
+      {/* ── DETAIL GRID ── */}
+      <div className="rb-card__details">
+        <div className="rb-card__detail">
+          <span className="rb-card__detail-icon">📅</span>
+          <span className="rb-card__detail-val">{formatDate(reservation.date)}</span>
+          <span className="rb-card__detail-key">Date</span>
         </div>
-        <div className="cr-card__detail">
-          <span className="cr-card__detail-icon">🕐</span>
-          <span className="cr-card__detail-val">{formatTime(reservation.time)}</span>
-          <span className="cr-card__detail-key">Time</span>
+        <div className="rb-card__detail">
+          <span className="rb-card__detail-icon">🕐</span>
+          <span className="rb-card__detail-val">{formatTime(reservation.time)}</span>
+          <span className="rb-card__detail-key">Time</span>
         </div>
-        <div className="cr-card__detail">
-          <span className="cr-card__detail-icon">👥</span>
-          <span className="cr-card__detail-val">
+        <div className="rb-card__detail">
+          <span className="rb-card__detail-icon">👥</span>
+          <span className="rb-card__detail-val">
             {reservation.guests} {reservation.guests === 1 ? "Guest" : "Guests"}
           </span>
-          <span className="cr-card__detail-key">Party size</span>
+          <span className="rb-card__detail-key">Party size</span>
         </div>
       </div>
 
-      {/* ── BOTTOM ROW: note / cancel reason / completed badge ── */}
-      <div className="cr-card__bottom">
-        {reservation.cancelReason ? (
-          <p className="cr-card__cancel-reason">
-            <span>⚠️</span>
-            <span>Cancelled: {reservation.cancelReason}</span>
-          </p>
-        ) : reservation.note ? (
-          <p className="cr-card__note">
-            <span>📝</span>
-            <span>{reservation.note}</span>
-          </p>
-        ) : (
-          <p className="cr-card__no-note">No special requests</p>
-        )}
+      {/* ── DIVIDER ── */}
+      <div className="rb-card__divider" />
+
+      {/* ── BOTTOM ROW ── */}
+      <div className="rb-card__foot">
+        <div className="rb-card__note-wrap">
+          {reservation.cancelReason ? (
+            <p className="rb-card__cancel-reason">
+              <span>⚠️</span>
+              <span>Cancelled: {reservation.cancelReason}</span>
+            </p>
+          ) : reservation.note ? (
+            <p className="rb-card__note">
+              <span>📝</span>
+              <span>{reservation.note}</span>
+            </p>
+          ) : (
+            <p className="rb-card__no-note">No special requests</p>
+          )}
+        </div>
 
         {reservation.status === "completed" && (
-          <div className="cr-card__timeline">
-            ✓ Visit completed
-          </div>
+          <div className="rb-card__badge rb-card__badge--completed">✓ Visit completed</div>
         )}
-
         {reservation.status === "confirmed" && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 6,
-            fontSize: "0.75rem", color: "#047857", fontWeight: 600,
-            background: "#d1fae5", padding: "4px 12px", borderRadius: 50,
-            flexShrink: 0,
-          }}>
-            🎉 Your table is confirmed!
-          </div>
+          <div className="rb-card__badge rb-card__badge--confirmed">🎉 Table confirmed!</div>
         )}
-
         {reservation.status === "pending" && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 6,
-            fontSize: "0.75rem", color: "#b45309", fontWeight: 600,
-            background: "#fef3c7", padding: "4px 12px", borderRadius: 50,
-            flexShrink: 0,
-          }}>
-            ⏳ Awaiting confirmation
-          </div>
+          <div className="rb-card__badge rb-card__badge--pending">⏳ Awaiting confirmation</div>
         )}
       </div>
-
     </div>
   );
 }
@@ -156,6 +145,7 @@ export default function CustomerReservations() {
   const [loading, setLoading]           = useState(true);
   const [activeFilter, setFilter]       = useState("All");
   const [error, setError]               = useState(null);
+  const [mounted, setMounted]           = useState(false);
 
   useEffect(() => {
     const user = localStorage.getItem("user");
@@ -178,6 +168,7 @@ export default function CustomerReservations() {
       setError("Failed to load your reservations.");
     } finally {
       setLoading(false);
+      setTimeout(() => setMounted(true), 60);
     }
   };
 
@@ -197,58 +188,79 @@ export default function CustomerReservations() {
       : reservations.filter(r => r.status === activeFilter.toLowerCase())
   ).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+  if (loading) return (
+    <div className={`rb rb--in`}>
+      <Header />
+      <div className="rb__state">
+        <div className="rb__spinner" />
+        <p className="rb__state-text">Loading your bookings…</p>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="rb rb--in">
+      <Header />
+      <div className="rb__state">
+        <p className="rb__state-text rb__state-text--err">⚠ {error}</p>
+        <button className="rb__retry" onClick={fetchReservations}>Try again</button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="cr-page">
+    <div className={`rb ${mounted ? "rb--in" : ""}`}>
       <Header />
 
-      {/* ── HERO ── */}
-      <section className="cr-hero">
-        <div className="cr-hero__inner">
-          <button className="cr-hero__back" onClick={() => navigate(-1)}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M19 12H5M12 5l-7 7 7 7"/>
-            </svg>
-            Back
-          </button>
-          <h1 className="cr-hero__title">My Table Bookings</h1>
-          <p className="cr-hero__sub">Track all your restaurant reservations in one place</p>
-        </div>
-      </section>
+      {/* ══ HERO ══ */}
+      <div className="rb__hero">
+        <div className="rb__hero-inner">
+          <div>
+            <button className="rb__hero-back" onClick={() => navigate(-1)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M19 12H5M12 5l-7 7 7 7"/>
+              </svg>
+              Back
+            </button>
+            <div className="rb__badge">✦ Table bookings</div>
+            <h1 className="rb__title">
+              My <em>Reservations</em>
+            </h1>
+            <p className="rb__sub">Track and manage all your restaurant table bookings in one place.</p>
+          </div>
 
-      {/* ── STATS ── */}
-      <div className="cr-stats">
-        <div className="cr-stat">
-          <span className="cr-stat__num">{stats.total}</span>
-          <span className="cr-stat__label">Total</span>
-        </div>
-        <div className="cr-stat cr-stat--pending">
-          <span className="cr-stat__num">{stats.pending}</span>
-          <span className="cr-stat__label">Pending</span>
-        </div>
-        <div className="cr-stat cr-stat--confirmed">
-          <span className="cr-stat__num">{stats.confirmed}</span>
-          <span className="cr-stat__label">Confirmed</span>
-        </div>
-        <div className="cr-stat cr-stat--cancelled">
-          <span className="cr-stat__num">{stats.cancelled}</span>
-          <span className="cr-stat__label">Cancelled</span>
+          {reservations.length > 0 && (
+            <div className="rb__stats">
+              {[
+                { v: stats.total,     l: "Bookings"  },
+                { v: stats.confirmed, l: "Confirmed"  },
+                { v: stats.pending,   l: "Pending"    },
+                { v: stats.completed, l: "Completed"  },
+              ].map(({ v, l }) => (
+                <div className="rb__stat" key={l}>
+                  <strong>{v}</strong>
+                  <span>{l}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── BODY ── */}
-      <div className="cr-body">
+      {/* ══ BODY ══ */}
+      <div className="rb__wrap">
 
         {/* Filter tabs */}
-        <div className="cr-filters">
+        <div className="rb__filters">
           {STATUS_TABS.map(tab => (
             <button
               key={tab}
-              className={`cr-filter ${activeFilter === tab ? "cr-filter--active" : ""}`}
+              className={`rb__filter ${activeFilter === tab ? "rb__filter--active" : ""}`}
               onClick={() => setFilter(tab)}
             >
               {tab}
-              <span className="cr-filter__count">
+              <span className="rb__filter-count">
                 {tab === "All"
                   ? stats.total
                   : reservations.filter(r => r.status === tab.toLowerCase()).length}
@@ -258,42 +270,32 @@ export default function CustomerReservations() {
         </div>
 
         {/* Content */}
-        {loading ? (
-          <div className="cr-skeletons">
-            {[1,2,3].map(i => <div key={i} className="cr-skeleton" />)}
-          </div>
-        ) : error ? (
-          <div className="cr-empty">
-            <span className="cr-empty__icon">⚠️</span>
-            <h3>Something went wrong</h3>
-            <p>{error}</p>
-            <button className="cr-empty__cta" onClick={fetchReservations}>
-              Try again
-            </button>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="cr-empty">
-            <span className="cr-empty__icon">📅</span>
-            <h3>
+        {filtered.length === 0 ? (
+          <div className="rb__empty">
+            <div className="rb__empty-ring">📅</div>
+            <h2>
               {activeFilter === "All"
                 ? "No reservations yet"
                 : `No ${activeFilter.toLowerCase()} reservations`}
-            </h3>
+            </h2>
             <p>
               {activeFilter === "All"
                 ? "Book a table at your favourite restaurant and it'll show up here."
-                : `You don't have any ${activeFilter.toLowerCase()} bookings.`}
+                : `You don't have any ${activeFilter.toLowerCase()} bookings right now.`}
             </p>
             {activeFilter === "All" && (
-              <button className="cr-empty__cta" onClick={() => navigate("/")}>
-                Explore restaurants
+              <button className="rb__empty-cta" onClick={() => navigate("/")}>
+                Explore Restaurants
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </button>
             )}
           </div>
         ) : (
-          <div className="cr-list">
-            {filtered.map(r => (
-              <ReservationCard key={r._id} reservation={r} />
+          <div className="rb__list">
+            {filtered.map((r, idx) => (
+              <ReservationCard key={r._id} reservation={r} idx={idx} />
             ))}
           </div>
         )}
