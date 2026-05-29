@@ -52,6 +52,12 @@ app.use("/api/admin", require("./routes/admin.routes"));
 /* MERCHANT */
 app.use("/api/merchant", require("./routes/merchant.routes"));
 
+/* NEARBY RESTAURANTS */
+app.use(
+  "/api/nearby-restaurants",
+  require("./routes/nearbyrestaurants.routes")
+);
+
 /* MERCHANT FOOD */
 app.use("/api/merchant-food", require("./routes/merchantfood.routes"));
 
