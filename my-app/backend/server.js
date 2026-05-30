@@ -1,7 +1,7 @@
 const express = require("express");
-const cors    = require("cors");
-const dotenv  = require("dotenv");
-const path    = require("path");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const path = require("path");
 
 /* =========================
    DATABASE
@@ -46,6 +46,9 @@ app.use(
 app.use("/api/auth", require("./routes/signup.routes"));
 app.use("/api/auth", require("./routes/login.routes"));
 
+/* FORGOT PASSWORD */
+app.use("/api/auth", require("./routes/forgotpassword.routes"));
+
 /* ADMIN */
 app.use("/api/admin", require("./routes/admin.routes"));
 
@@ -59,25 +62,46 @@ app.use(
 );
 
 /* MERCHANT FOOD */
-app.use("/api/merchant-food", require("./routes/merchantfood.routes"));
+app.use(
+  "/api/merchant-food",
+  require("./routes/merchantfood.routes")
+);
 
 /* PAYMENT */
-app.use("/api/payment", require("./routes/payment.routes"));
+app.use(
+  "/api/payment",
+  require("./routes/payment.routes")
+);
 
 /* MERCHANT SETTINGS */
-app.use("/api/merchant-settings", require("./routes/merchantsettings.routes"));
+app.use(
+  "/api/merchant-settings",
+  require("./routes/merchantsettings.routes")
+);
 
 /* ORDERS */
-app.use("/api/orders", require("./routes/orders.routes"));
+app.use(
+  "/api/orders",
+  require("./routes/orders.routes")
+);
 
 /* CHECKOUT */
-app.use("/api/checkout", require("./routes/checkout.routes"));
+app.use(
+  "/api/checkout",
+  require("./routes/checkout.routes")
+);
 
-/* RESERVATIONS ✅ */
-app.use("/api/reservations", require("./routes/reservations.routes"));
+/* RESERVATIONS */
+app.use(
+  "/api/reservations",
+  require("./routes/reservations.routes")
+);
 
 /* PROFILE */
-app.use("/api", require("./routes/profile.routes"));
+app.use(
+  "/api",
+  require("./routes/profile.routes")
+);
 
 /* =========================
    TEST ROUTE
@@ -90,13 +114,17 @@ app.get("/", (req, res) => {
    404 HANDLER
 ========================= */
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: "Route Not Found" });
+  res.status(404).json({
+    success: false,
+    message: "Route Not Found",
+  });
 });
 
 /* =========================
    SERVER
 ========================= */
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
   console.log(`Server Running On Port ${PORT}`);
 });
