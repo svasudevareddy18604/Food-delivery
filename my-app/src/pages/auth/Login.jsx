@@ -1,4 +1,3 @@
-
 import "./Login.css";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -123,12 +122,9 @@ function Login() {
       toast.info("Signing you in…", 2500);
 
       const { data } = await axios.post(
-  `${import.meta.env.VITE_API_URL}/api/auth/login`,
-  {
-    email,
-    password,
-  }
-);
+        `${import.meta.env.VITE_API_URL}/api/auth/login`,
+        { email, password }
+      );
 
       const { user, token } = data;
 
@@ -154,10 +150,23 @@ function Login() {
       setTimeout(() => {
         if (user.role === "customer") {
           navigate("/");
+
         } else if (user.role === "delivery") {
-          navigate("/delivery/dashboard");
+          const deliveryStatus = data.deliveryStatus;
+
+          if (!deliveryStatus || !deliveryStatus.profileExists) {
+            navigate("/delivery-registration");
+          } else if (deliveryStatus.approvalStatus === "Pending") {
+            navigate("/delivery-review");
+          } else if (deliveryStatus.approvalStatus === "Rejected") {
+            navigate("/delivery-rejected");
+          } else if (deliveryStatus.approvalStatus === "Approved") {
+            navigate("/delivery/dashboard");
+          }
+
         } else if (user.role === "admin") {
           navigate("/admin");
+
         } else if (user.role === "merchant") {
           if (!user.registrationCompleted) navigate("/merchant-registration");
           else if (!user.isApproved)       navigate("/waiting-approval");

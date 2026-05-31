@@ -1,14 +1,18 @@
 const express = require("express");
 const router = express.Router();
 
-const DeliveryPartner = require("../models/DeliveryPartner");
-const deliveryUpload = require("../middleware/deliveryUpload");
+const DeliveryPartner =
+  require("../models/DeliveryPartner");
+
+const deliveryUpload =
+  require("../middleware/deliveryUpload");
 
 /* =====================================
    DELIVERY PARTNER REGISTRATION
 ===================================== */
 
 router.post(
+
   "/register",
 
   deliveryUpload.fields([
@@ -35,8 +39,13 @@ router.post(
   ]),
 
   async (req, res) => {
+
     try {
+
       const {
+
+        userId,
+
         fullName,
         mobile,
         email,
@@ -71,39 +80,33 @@ router.post(
         workingHours,
 
         locationPermission,
+
       } = req.body;
 
       /* ==========================
          VALIDATION
       ========================== */
 
-      if (!fullName || !mobile) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Full name and mobile number are required",
-        });
-      }
-
-      /* ==========================
-         CHECK EXISTING RECORD
-      ========================== */
-
-      const existingPartner =
-        await DeliveryPartner.findOne({
-          mobile,
-        });
-
       if (
-        existingPartner &&
-        existingPartner.registrationCompleted
+        !userId ||
+        !fullName ||
+        !mobile
       ) {
         return res.status(400).json({
           success: false,
           message:
-            "Registration already completed",
+            "User ID, Full Name and Mobile Number are required",
         });
       }
+
+      /* ==========================
+         CHECK EXISTING PROFILE
+      ========================== */
+
+      const existingPartner =
+        await DeliveryPartner.findOne({
+          userId,
+        });
 
       /* ==========================
          FILE PATHS
@@ -124,21 +127,36 @@ router.post(
       const vehicleRC =
         req.files?.vehicleRC?.[0]?.path || "";
 
-      /* ==========================
-         CREATE OR UPDATE
-      ========================== */
-
       let partner;
 
+      /* ==========================
+         UPDATE EXISTING PROFILE
+      ========================== */
+
       if (existingPartner) {
+
         partner = existingPartner;
 
-        partner.fullName = fullName;
-        partner.email = email;
-        partner.dob = dob;
-        partner.gender = gender;
+        partner.userId = userId;
 
-        partner.profilePhoto = profilePhoto;
+        partner.fullName =
+          fullName;
+
+        partner.mobile =
+          mobile;
+
+        partner.email =
+          email;
+
+        partner.dob =
+          dob;
+
+        partner.gender =
+          gender;
+
+        if (profilePhoto)
+          partner.profilePhoto =
+            profilePhoto;
 
         partner.address = {
           houseNo,
@@ -152,17 +170,20 @@ router.post(
         partner.aadhaarNumber =
           aadhaarNumber;
 
-        partner.aadhaarFront =
-          aadhaarFront;
+        if (aadhaarFront)
+          partner.aadhaarFront =
+            aadhaarFront;
 
-        partner.aadhaarBack =
-          aadhaarBack;
+        if (aadhaarBack)
+          partner.aadhaarBack =
+            aadhaarBack;
 
         partner.drivingLicenseNumber =
           drivingLicenseNumber;
 
-        partner.drivingLicenseImage =
-          drivingLicenseImage;
+        if (drivingLicenseImage)
+          partner.drivingLicenseImage =
+            drivingLicenseImage;
 
         partner.vehicleType =
           vehicleType;
@@ -170,8 +191,9 @@ router.post(
         partner.vehicleNumber =
           vehicleNumber;
 
-        partner.vehicleRC =
-          vehicleRC;
+        if (vehicleRC)
+          partner.vehicleRC =
+            vehicleRC;
 
         partner.bankHolderName =
           bankHolderName;
@@ -215,10 +237,24 @@ router.post(
         partner.approvalStatus =
           "Pending";
 
+        partner.rejectionReason =
+          "";
+
         await partner.save();
-      } else {
+
+      }
+
+      /* ==========================
+         CREATE NEW PROFILE
+      ========================== */
+
+      else {
+
         partner =
           await DeliveryPartner.create({
+
+            userId,
+
             fullName,
             mobile,
             email,
@@ -270,31 +306,59 @@ router.post(
 
             approvalStatus:
               "Pending",
+
+            rejectionReason:
+              "",
+
+            isActive:
+              true,
+
           });
+
       }
 
       /* ==========================
          SUCCESS
       ========================== */
 
-      res.status(201).json({
+      return res.status(201).json({
+
         success: true,
+
         message:
           "Registration submitted successfully. Waiting for admin approval.",
+
+        registrationCompleted:
+          true,
+
         approvalStatus:
           partner.approvalStatus,
-      });
-    } catch (error) {
-      console.error(error);
 
-      res.status(500).json({
+      });
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "DELIVERY REGISTRATION ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+
         success: false,
+
         message:
           error.message ||
           "Registration failed",
+
       });
+
     }
+
   }
+
 );
 
 module.exports = router;

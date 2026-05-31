@@ -4,6 +4,7 @@ import Header         from "../../components/admin/header";
 import Home           from "./Home";
 import AdminDashboard from "./AdminDashboard";
 import AdminCustomers from "./AdminCustomers";
+import AdminDelivery  from "./AdminDelivery";
 import "./AdminLayout.css";
 
 export default function AdminLayout() {
@@ -43,6 +44,17 @@ export default function AdminLayout() {
               <>
                 <Header title="Customers" />
                 <AdminCustomers />
+              </>
+            }
+          />
+
+          {/* Delivery Boys */}
+          <Route
+            path="/delivery"
+            element={
+              <>
+                <Header title="Delivery Partners" />
+                <AdminDelivery />
               </>
             }
           />
