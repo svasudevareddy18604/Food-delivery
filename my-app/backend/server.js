@@ -9,6 +9,11 @@ const path = require("path");
 const connectDB = require("./config/db");
 
 /* =========================
+   MAINTENANCE MIDDLEWARE
+========================= */
+const maintenanceCheck = require("./middleware/maintenanceCheck");
+
+/* =========================
    LOAD ENV
 ========================= */
 dotenv.config();
@@ -31,6 +36,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* =========================
+   MAINTENANCE MODE
+========================= */
+app.use(maintenanceCheck);
+
+/* =========================
    STATIC FOLDER
 ========================= */
 app.use(
@@ -51,6 +61,12 @@ app.use("/api/auth", require("./routes/forgotpassword.routes"));
 
 /* ADMIN */
 app.use("/api/admin", require("./routes/admin.routes"));
+
+/* ADMIN SETTINGS */
+app.use(
+  "/api/admin/settings",
+  require("./routes/adminsettings.routes")
+);
 
 /* MERCHANT */
 app.use("/api/merchant", require("./routes/merchant.routes"));

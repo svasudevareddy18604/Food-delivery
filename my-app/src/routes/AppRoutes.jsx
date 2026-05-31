@@ -111,7 +111,7 @@ export default function AppRoutes() {
         <Route path="/merchant/bookings"     element={<MerchantBookings />} />
 
         {/* ── Delivery ── */}
-        <Route path="/delivery-registration" element={<DeliveryRegistration />} />
+        <Route path="/deliverypartner-registration" element={<DeliveryRegistration />} />
         <Route path="/delivery-review"       element={<DeliveryReview />} />
         <Route path="/delivery-rejected"     element={<DeliveryRejected />} />
         <Route path="/delivery/dashboard"    element={<DeliveryDashboard />} />

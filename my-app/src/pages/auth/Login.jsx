@@ -155,7 +155,7 @@ function Login() {
           const deliveryStatus = data.deliveryStatus;
 
           if (!deliveryStatus || !deliveryStatus.profileExists) {
-            navigate("/delivery-registration");
+            navigate("/deliverypartner-registration");
           } else if (deliveryStatus.approvalStatus === "Pending") {
             navigate("/delivery-review");
           } else if (deliveryStatus.approvalStatus === "Rejected") {
