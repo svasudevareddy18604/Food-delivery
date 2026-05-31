@@ -1,0 +1,37 @@
+.admin-settings {
+  padding: 20px;
+}
+
+.settings-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 25px;
+  max-width: 700px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.1);
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.setting-row input[type="number"] {
+  width: 150px;
+  padding: 8px;
+}
+
+.save-btn {
+  background: #16a34a;
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.save-btn:hover {
+  opacity: 0.9;
+}
