@@ -4,81 +4,48 @@ const maintenanceCheck = async (req, res, next) => {
   try {
     const settings = await Settings.findOne();
 
-    /* No settings found */
-    if (!settings) {
+    // No settings doc or maintenance disabled → pass through
+    if (!settings || !settings.maintenanceMode) {
       return next();
     }
 
-    /* Maintenance disabled */
-    if (!settings.maintenanceMode) {
+    // ── Exclusions — check FIRST before anything else ───────
+    // These routes are NEVER blocked, even during maintenance
+    const excluded = [
+      "/api/auth",          // login, signup, forgot-password
+      "/api/admin",         // admin panel
+      "/api/settings",      // frontend reads maintenance status from here
+    ];
+    if (excluded.some((p) => req.originalUrl.startsWith(p))) {
       return next();
     }
 
-    const now = new Date();
+    if (req.originalUrl === "/" || req.originalUrl.startsWith("/uploads")) {
+      return next();
+    }
+    // ────────────────────────────────────────────────────────
 
-    /* Scheduled Maintenance Check */
-    if (
-      settings.maintenanceStartDate &&
-      settings.maintenanceEndDate
-    ) {
-      const startDate = new Date(
-        settings.maintenanceStartDate
-      );
-
-      const endDate = new Date(
-        settings.maintenanceEndDate
-      );
-
-      /* Outside maintenance window */
-      if (
-        now < startDate ||
-        now > endDate
-      ) {
-        return next();
+    // If a schedule is set, only block within that window
+    if (settings.maintenanceStartDate && settings.maintenanceEndDate) {
+      const now   = new Date();
+      const start = new Date(settings.maintenanceStartDate);
+      const end   = new Date(settings.maintenanceEndDate);
+      if (now < start || now > end) {
+        return next(); // outside the window → not in maintenance
       }
     }
 
-    /* Allow login route */
-    if (
-      req.originalUrl.startsWith(
-        "/api/auth/login"
-      )
-    ) {
-      return next();
-    }
-
-    /* Allow admin routes */
-    if (
-      req.originalUrl.startsWith(
-        "/api/admin"
-      )
-    ) {
-      return next();
-    }
-
-    /* Allow health check */
-    if (req.originalUrl === "/") {
-      return next();
-    }
-
-    /* Block everything else */
     return res.status(503).json({
       success: false,
       maintenance: true,
-      message:
-        "Website is currently under maintenance.",
-      startDate:
-        settings.maintenanceStartDate,
-      endDate:
-        settings.maintenanceEndDate,
+      message: "Website is currently under maintenance.",
+      startDate: settings.maintenanceStartDate,
+      endDate:   settings.maintenanceEndDate,
     });
-  } catch (error) {
-    console.error(
-      "Maintenance Check Error:",
-      error
-    );
 
-    next();
+  } catch (error) {
+    console.error("Maintenance Check Error:", error);
+    next(); // never crash the app over a settings fetch
   }
 };
 

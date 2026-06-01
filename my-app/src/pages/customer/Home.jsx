@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -6,6 +6,9 @@ import Header from "../../components/customer/Header";
 import "./Home.css";
 
 
+/* ══════════════════════════════════════
+   CONSTANTS
+══════════════════════════════════════ */
 const STATS = [
   { value: "200+", label: "Restaurants" },
   { value: "50K+", label: "Happy diners" },
@@ -38,9 +41,22 @@ function formatTime(t) {
   return `${hour}:${m.toString().padStart(2, "0")} ${ampm}`;
 }
 
-// ✅ New — pass isOnline too
+function formatDateTime(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 function isOpen(opening, closing, isOnline) {
-  if (isOnline === false) return false; // manually offline
+  if (isOnline === false) return false;
   if (!opening || !closing) return null;
   const now = new Date();
   const [oh, om] = opening.split(":").map(Number);
@@ -59,7 +75,124 @@ function StarRating({ rating = 0 }) {
   );
 }
 
-/* ── Cart Toast ── */
+
+/* ══════════════════════════════════════
+   MAINTENANCE BANNER
+══════════════════════════════════════ */
+function MaintenanceBanner({ settings }) {
+  const [visible, setVisible] = useState(true);
+  const startFormatted = formatDateTime(settings.maintenanceStartDate);
+  const endFormatted   = formatDateTime(settings.maintenanceEndDate);
+
+  if (!visible) return null;
+
+  return (
+    <div className="maintenance-banner" role="alert" aria-live="polite">
+      {/* Animated grid pattern overlay */}
+      <div className="maintenance-banner__grid" aria-hidden="true" />
+
+      {/* Dismiss */}
+      <button
+        className="maintenance-banner__dismiss"
+        onClick={() => setVisible(false)}
+        aria-label="Dismiss maintenance notice"
+      >
+        ✕
+      </button>
+
+      <div className="maintenance-banner__inner">
+        {/* Icon + Status row */}
+        <div className="maintenance-banner__header">
+          <span className="maintenance-banner__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4" /><circle cx="12" cy="16" r=".5" fill="currentColor" />
+            </svg>
+          </span>
+          <span className="maintenance-banner__status-label">
+            Scheduled Maintenance
+          </span>
+          <span className="maintenance-banner__status-dot" aria-hidden="true" />
+        </div>
+
+        {/* Main message */}
+        <h2 className="maintenance-banner__title">
+          We're improving your experience
+        </h2>
+
+        <p className="maintenance-banner__message">
+          Our engineering team is performing planned server upgrades and infrastructure
+          enhancements to make Foodie faster, more reliable, and better than ever. Some
+          features may be temporarily unavailable during this window.
+        </p>
+
+        {/* Timeline block */}
+        {(startFormatted || endFormatted) && (
+          <div className="maintenance-banner__timeline">
+            {startFormatted && (
+              <div className="maintenance-banner__time-item">
+                <span className="maintenance-banner__time-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Starts
+                </span>
+                <span className="maintenance-banner__time-value">{startFormatted}</span>
+              </div>
+            )}
+
+            {startFormatted && endFormatted && (
+              <div className="maintenance-banner__time-sep" aria-hidden="true" />
+            )}
+
+            {endFormatted && (
+              <div className="maintenance-banner__time-item">
+                <span className="maintenance-banner__time-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" strokeLinecap="round" />
+                    <path d="M22 4 12 14.01l-3-3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Back online by
+                </span>
+                <span className="maintenance-banner__time-value maintenance-banner__time-value--green">{endFormatted}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Reassurance row */}
+        <div className="maintenance-banner__reassurance">
+          <span className="maintenance-banner__pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            Your data is safe
+          </span>
+          <span className="maintenance-banner__pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.56 2 2 0 0 1 3.58 1.39h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.03z" />
+            </svg>
+            Contact support@foodie.in
+          </span>
+          <span className="maintenance-banner__pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+              <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+            Back soon
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* ══════════════════════════════════════
+   CART TOAST
+══════════════════════════════════════ */
 function CartToast({ item, onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 2500);
@@ -76,15 +209,17 @@ function CartToast({ item, onClose }) {
   );
 }
 
-/* ── Restaurant Card ── */
+
+/* ══════════════════════════════════════
+   RESTAURANT CARD
+══════════════════════════════════════ */
 function RestaurantCard({ r, onBook }) {
   const navigate = useNavigate();
-  const open     = isOpen(r.openingTime, r.closingTime, r.isOnline); // ✅ add r.isOnline
+  const open     = isOpen(r.openingTime, r.closingTime, r.isOnline);
   const cuisine  = r.restaurantType || "";
 
   return (
     <div className="r-card" onClick={() => navigate(`/restaurant/${r._id}`)}>
-      {/* Image */}
       <div className="r-card__img">
         {r.restaurantImage ? (
           <img
@@ -108,7 +243,6 @@ function RestaurantCard({ r, onBook }) {
         )}
       </div>
 
-      {/* Body */}
       <div className="r-card__body">
         <div className="r-card__top">
           <h3 className="r-card__name">{r.restaurantName}</h3>
@@ -122,18 +256,9 @@ function RestaurantCard({ r, onBook }) {
         )}
 
         <div className="r-card__hours">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10" />
-            <path
-              d="M12 6v6l4 2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            <path d="M12 6v6l4 2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <div>
             <span className="r-card__hours-label">Hours</span>
@@ -144,12 +269,7 @@ function RestaurantCard({ r, onBook }) {
         </div>
 
         <p className="r-card__address">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
             <circle cx="12" cy="9" r="2.5" />
           </svg>
@@ -159,7 +279,6 @@ function RestaurantCard({ r, onBook }) {
         <div className="r-card__footer">
           <span className="r-card__delivery">Free delivery</span>
 
-          {/* ✅ Only show "Reserve Table" when the restaurant has enabled it */}
           {r.tableReservationEnabled && (
             <button
               className="btn-book"
@@ -177,7 +296,10 @@ function RestaurantCard({ r, onBook }) {
   );
 }
 
-/* ── Food Item Card (shown under Popular Dishes) ── */
+
+/* ══════════════════════════════════════
+   FOOD ITEM CARD
+══════════════════════════════════════ */
 function FoodItemCard({ item, onAddToCart, isClosed }) {
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
@@ -223,19 +345,8 @@ function FoodItemCard({ item, onAddToCart, isClosed }) {
           <p className="food-card__desc">{item.description}</p>
         )}
         <p className="food-card__restaurant">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            width="12"
-            height="12"
-          >
-            <path
-              d="M3 11l19-9-9 19-2-8-8-2z"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
+            <path d="M3 11l19-9-9 19-2-8-8-2z" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           {item.restaurantName}
         </p>
@@ -244,9 +355,7 @@ function FoodItemCard({ item, onAddToCart, isClosed }) {
             {item.price ? `₹${item.price}` : "—"}
           </span>
           <button
-            className={`btn-cart ${adding ? "btn-cart--added" : ""} ${
-              isClosed ? "btn-cart--disabled" : ""
-            }`}
+            className={`btn-cart ${adding ? "btn-cart--added" : ""} ${isClosed ? "btn-cart--disabled" : ""}`}
             onClick={handleCart}
             disabled={isClosed}
           >
@@ -258,7 +367,10 @@ function FoodItemCard({ item, onAddToCart, isClosed }) {
   );
 }
 
-/* ── Recommended Menu Item Card (horizontal scroll) ── */
+
+/* ══════════════════════════════════════
+   MENU ITEM CARD (horizontal scroll)
+══════════════════════════════════════ */
 function MenuItemCard({ item, onAddToCart, isClosed }) {
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
@@ -301,9 +413,7 @@ function MenuItemCard({ item, onAddToCart, isClosed }) {
             <span className="menu-item-card__price">₹{item.price}</span>
           )}
           <button
-            className={`btn-cart btn-cart--sm ${
-              adding ? "btn-cart--added" : ""
-            } ${isClosed ? "btn-cart--disabled" : ""}`}
+            className={`btn-cart btn-cart--sm ${adding ? "btn-cart--added" : ""} ${isClosed ? "btn-cart--disabled" : ""}`}
             onClick={handleCart}
             disabled={isClosed}
           >
@@ -315,7 +425,10 @@ function MenuItemCard({ item, onAddToCart, isClosed }) {
   );
 }
 
-/* ── Booking Modal ── */
+
+/* ══════════════════════════════════════
+   BOOKING MODAL
+══════════════════════════════════════ */
 function BookingModal({ restaurant, onClose }) {
   const [form, setForm]       = useState({ date: "", time: "", guests: 2, note: "" });
   const [done, setDone]       = useState(false);
@@ -330,11 +443,7 @@ function BookingModal({ restaurant, onClose }) {
       await axios.post(
         `${API_URL}/api/reservations`,
         { restaurantId: restaurant._id, ...form },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       setDone(true);
     } catch {
@@ -355,17 +464,13 @@ function BookingModal({ restaurant, onClose }) {
               We'll confirm your booking at{" "}
               <strong>{restaurant.restaurantName}</strong> shortly.
             </p>
-            <button className="btn-primary" onClick={onClose}>
-              Done
-            </button>
+            <button className="btn-primary" onClick={onClose}>Done</button>
           </div>
         ) : (
           <>
             <div className="modal__head">
               <h3>Reserve at {restaurant.restaurantName}</h3>
-              <button className="modal__close" onClick={onClose}>
-                ✕
-              </button>
+              <button className="modal__close" onClick={onClose}>✕</button>
             </div>
 
             <div className="modal__fields">
@@ -390,10 +495,7 @@ function BookingModal({ restaurant, onClose }) {
 
               <label>
                 Guests
-                <select
-                  value={form.guests}
-                  onChange={(e) => set("guests", +e.target.value)}
-                >
+                <select value={form.guests} onChange={(e) => set("guests", +e.target.value)}>
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
                     <option key={n}>{n}</option>
                   ))}
@@ -425,6 +527,7 @@ function BookingModal({ restaurant, onClose }) {
   );
 }
 
+
 /* ══════════════════════════════════════
    MAIN HOME PAGE
 ══════════════════════════════════════ */
@@ -442,6 +545,10 @@ export default function Home() {
   const [toast, setToast]             = useState(null);
   const [openMap, setOpenMap]         = useState({});
 
+  /* ── Maintenance state ── */
+  const [maintenanceSettings, setMaintenanceSettings] = useState(null);
+  const [maintenanceActive, setMaintenanceActive]     = useState(false);
+
   const [cart, setCart] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("cart") || "[]");
@@ -450,12 +557,41 @@ export default function Home() {
     }
   });
 
+  /* ── Fetch settings (maintenance) ── */
+  const fetchSettings = useCallback(async () => {
+    try {
+      const { data } = await axios.get(`${API_URL}/api/settings`);
+      const s = data.settings;
+      if (!s) return;
+
+      if (s.maintenanceMode) {
+        /* If scheduled, check the window */
+        if (s.maintenanceStartDate && s.maintenanceEndDate) {
+          const now   = new Date();
+          const start = new Date(s.maintenanceStartDate);
+          const end   = new Date(s.maintenanceEndDate);
+          if (now >= start && now <= end) {
+            setMaintenanceActive(true);
+            setMaintenanceSettings(s);
+          }
+        } else {
+          /* No schedule — always active */
+          setMaintenanceActive(true);
+          setMaintenanceSettings(s);
+        }
+      }
+    } catch (err) {
+      /* Silently fail — don't crash homepage over a settings error */
+      console.warn("Could not fetch settings:", err);
+    }
+  }, []);
+
   useEffect(() => {
     setTimeout(() => setMounted(true), 50);
+    fetchSettings();
     fetchData();
   }, []);
 
-  // Persist cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
@@ -475,60 +611,48 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      // Fetch restaurants
-      const { data } = await axios.get(
-        `${API_URL}/api/merchant/approved-restaurants`
-      );
+      const { data } = await axios.get(`${API_URL}/api/merchant/approved-restaurants`);
       const list = data.restaurants || [];
       setRestaurants(list);
       setFiltered(list);
 
-      // Build merchantId → restaurantName map
       const merchantMap = {};
       list.forEach((r) => {
         merchantMap[r._id] = r.restaurantName;
         if (r.merchantId) merchantMap[r.merchantId] = r.restaurantName;
       });
 
-      // Build open/closed map: restaurantId → bool
       const oMap = {};
-      const now = new Date();
-      const cur = now.getHours() * 60 + now.getMinutes();
+      const now  = new Date();
+      const cur  = now.getHours() * 60 + now.getMinutes();
       list.forEach((r) => {
-  // ✅ First check if merchant manually set offline
-  if (r.isOnline === false) {
-    oMap[r._id] = false;
-    if (r.merchantId) oMap[r.merchantId] = false;
-    return; // skip time check
-  }
-
-  if (r.openingTime && r.closingTime) {
-    const [oh, om] = r.openingTime.split(":").map(Number);
-    const [ch, cm] = r.closingTime.split(":").map(Number);
-    const open = cur >= oh * 60 + om && cur <= ch * 60 + cm;
-    oMap[r._id] = open;
-    if (r.merchantId) oMap[r.merchantId] = open;
-  }
-});
+        if (r.isOnline === false) {
+          oMap[r._id] = false;
+          if (r.merchantId) oMap[r.merchantId] = false;
+          return;
+        }
+        if (r.openingTime && r.closingTime) {
+          const [oh, om] = r.openingTime.split(":").map(Number);
+          const [ch, cm] = r.closingTime.split(":").map(Number);
+          const open = cur >= oh * 60 + om && cur <= ch * 60 + cm;
+          oMap[r._id] = open;
+          if (r.merchantId) oMap[r.merchantId] = open;
+        }
+      });
       setOpenMap(oMap);
 
-      // Fetch all food items
       try {
         setFoodLoading(true);
-        const foodRes = await axios.get(
-          `${API_URL}/api/merchant-food/all-foods`
-        );
+        const foodRes = await axios.get(`${API_URL}/api/merchant-food/all-foods`);
         const foods = (foodRes.data.foods || []).map((f) => ({
           ...f,
           restaurantName: merchantMap[f.merchantId] || "Unknown restaurant",
           restaurantId:   f.merchantId,
         }));
-
         setFoodItems(foods);
         setMenuItems([...foods].sort(() => Math.random() - 0.5).slice(0, 12));
       } catch (foodErr) {
         console.warn("Could not load food items:", foodErr);
-        // Fallback: pull items embedded in restaurant objects
         const items = [];
         list.forEach((r) => {
           const foods = r.foodItems || r.menuItems || r.menu || [];
@@ -552,7 +676,6 @@ export default function Home() {
     }
   };
 
-  // Derive unique categories from restaurantType field
   const categories = [
     ...new Set(
       restaurants
@@ -595,27 +718,23 @@ export default function Home() {
     <div className={`home ${mounted ? "home--in" : ""}`}>
       <Header cartCount={cartCount} />
 
+      {/* ── MAINTENANCE BANNER ── */}
+      {maintenanceActive && maintenanceSettings && (
+        <MaintenanceBanner settings={maintenanceSettings} />
+      )}
+
       {/* ── HERO ── */}
       <section className="hero">
         <div className="floating-foods" aria-hidden="true">
           {["🍕", "🍣", "🍔", "🌮", "🥗", "🍜", "🧁", "🍛"].map((e, i) => (
-            <span key={i} className="food-bubble" style={{ "--i": i }}>
-              {e}
-            </span>
+            <span key={i} className="food-bubble" style={{ "--i": i }}>{e}</span>
           ))}
         </div>
 
         <div className="hero__content">
           <div className="hero__text">
             <div className="hero__badge">
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
               The #1 food &amp; dining platform
@@ -629,12 +748,7 @@ export default function Home() {
             <p>Order delivery, dine-in, or book a table — all in one place.</p>
 
             <div className="hero__search">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" strokeLinecap="round" />
               </svg>
@@ -644,12 +758,7 @@ export default function Home() {
                 onChange={(e) => handleSearch(e.target.value)}
               />
               {search && (
-                <button
-                  className="hero__search-clear"
-                  onClick={() => handleSearch("")}
-                >
-                  ✕
-                </button>
+                <button className="hero__search-clear" onClick={() => handleSearch("")}>✕</button>
               )}
             </div>
           </div>
@@ -673,9 +782,7 @@ export default function Home() {
             {categories.map((c) => (
               <button
                 key={c}
-                className={`cat-chip ${
-                  activeCategory === c ? "cat-chip--active" : ""
-                }`}
+                className={`cat-chip ${activeCategory === c ? "cat-chip--active" : ""}`}
                 onClick={() => handleCategory(c)}
               >
                 <span>{getEmoji(c)}</span>
@@ -699,9 +806,7 @@ export default function Home() {
 
         {loading ? (
           <div className="grid">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="r-skeleton" />
-            ))}
+            {[...Array(6)].map((_, i) => <div key={i} className="r-skeleton" />)}
           </div>
         ) : filtered.length === 0 ? (
           <div className="empty">
@@ -732,9 +837,7 @@ export default function Home() {
 
         {foodLoading ? (
           <div className="food-grid">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="food-skeleton" />
-            ))}
+            {[...Array(8)].map((_, i) => <div key={i} className="food-skeleton" />)}
           </div>
         ) : foodItems.length === 0 ? (
           <div className="empty">
@@ -762,9 +865,7 @@ export default function Home() {
           <div className="section__head">
             <div>
               <h2 className="section__title">Recommended for you</h2>
-              <p className="section__sub">
-                Hand-picked dishes from top restaurants
-              </p>
+              <p className="section__sub">Hand-picked dishes from top restaurants</p>
             </div>
           </div>
           <div className="menu-scroll">
@@ -799,10 +900,7 @@ export default function Home() {
 
       {/* ── BOOKING MODAL ── */}
       {booking && (
-        <BookingModal
-          restaurant={booking}
-          onClose={() => setBooking(null)}
-        />
+        <BookingModal restaurant={booking} onClose={() => setBooking(null)} />
       )}
 
       {/* ── CART TOAST ── */}

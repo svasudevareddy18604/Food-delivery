@@ -68,6 +68,14 @@ app.use(
   require("./routes/adminsettings.routes")
 );
 
+/* PUBLIC SETTINGS — used by frontend to read maintenanceMode
+   Must be registered so /api/settings is not blocked by maintenanceCheck
+   (it is already in the exclusions list inside the middleware)       */
+app.use(
+  "/api/settings",
+  require("./routes/adminsettings.routes")
+);
+
 /* MERCHANT */
 app.use("/api/merchant", require("./routes/merchant.routes"));
 

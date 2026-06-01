@@ -17,17 +17,17 @@ import Signup         from "../pages/auth/Signup";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 
 /* ── Merchant ── */
-import MerchantRegistration from "../pages/merchant/MerchantRegistration";
-import WaitingApproval      from "../pages/merchant/WaitingApproval";
-import MerchantDashboard    from "../pages/merchant/MerchantDashboard";
-import MerchantBookings     from "../pages/merchant/MerchantBookings";
+import MerchantRegistration   from "../pages/merchant/MerchantRegistration";
+import WaitingApproval        from "../pages/merchant/WaitingApproval";
+import MerchantDashboard      from "../pages/merchant/MerchantDashboard";
+import MerchantBookings       from "../pages/merchant/MerchantBookings";
 import MerchantProtectedRoute from "./MerchantProtectedRoute";
 
 /* ── Delivery ── */
-import DeliveryRegistration from "../pages/delivery boy/DeliveryRegistration";
-import DeliveryReview       from "../pages/delivery boy/DeliveryReview";
-import DeliveryRejected     from "../pages/delivery boy/DeliveryRejected";
-import DeliveryDashboard    from "../pages/delivery boy/DeliveryDashboard";
+import DeliveryRegistration   from "../pages/delivery boy/DeliveryRegistration";
+import DeliveryReview         from "../pages/delivery boy/DeliveryReview";
+import DeliveryRejected       from "../pages/delivery boy/DeliveryRejected";
+import DeliveryDashboard      from "../pages/delivery boy/DeliveryDashboard";
 import DeliveryProtectedRoute from "./DeliveryProtectedRoute";
 
 /* ── Admin ── */
@@ -106,23 +106,11 @@ export default function AppRoutes() {
         <Route path="/delivery-review"              element={<DeliveryReview />} />
         <Route path="/delivery-rejected"            element={<DeliveryRejected />} />
 
-        {/* ── Customer (ALL protected) ── */}
-        <Route
-          path="/"
-          element={
-            <CustomerProtectedRoute>
-              <Home />
-            </CustomerProtectedRoute>
-          }
-        />
-        <Route
-          path="/restaurant/:merchantId"
-          element={
-            <CustomerProtectedRoute>
-              <RestaurantDetails />
-            </CustomerProtectedRoute>
-          }
-        />
+        {/* ── Customer PUBLIC routes ── */}
+        <Route path="/"                        element={<Home />} />
+        <Route path="/restaurant/:merchantId"  element={<RestaurantDetails />} />
+
+        {/* ── Customer PROTECTED routes ── */}
         <Route
           path="/cart"
           element={
