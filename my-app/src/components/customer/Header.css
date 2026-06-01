@@ -1,6 +1,178 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 /* ══════════════════════════════════════
+   STICKY WRAPPER
+   Wraps maintenance ticker + header so
+   both stick together at the top
+══════════════════════════════════════ */
+.header-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════════════════════════════════════
+   MAINTENANCE TICKER
+   Sits ABOVE the header, scrolls text
+══════════════════════════════════════ */
+.maint-ticker {
+  width: 100%;
+  height: 38px;
+  background: linear-gradient(90deg, #0d0d14 0%, #1a0826 50%, #0d0d14 100%);
+  border-bottom: 1px solid rgba(255, 107, 43, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow: hidden;
+  animation: maint-drop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  position: relative;
+}
+
+@keyframes maint-drop {
+  from { opacity: 0; height: 0; }
+  to   { opacity: 1; height: 38px; }
+}
+
+/* Left badge */
+.maint-ticker__badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 16px 0 18px;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  height: 100%;
+  background: rgba(255, 214, 10, 0.06);
+}
+
+.maint-ticker__badge span:last-child {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ffd60a;
+  white-space: nowrap;
+}
+
+.maint-ticker__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffd60a;
+  box-shadow: 0 0 6px rgba(255, 214, 10, 0.7);
+  animation: maint-dot-pulse 1.8s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes maint-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px rgba(255,214,10,.7); }
+  50%       { opacity: 0.6; transform: scale(1.3); box-shadow: 0 0 12px rgba(255,214,10,.4); }
+}
+
+/* Scrolling area */
+.maint-ticker__scroll {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 4%,
+    #000 96%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 4%,
+    #000 96%,
+    transparent 100%
+  );
+}
+
+.maint-ticker__scroll:hover .maint-ticker__track {
+  animation-play-state: paused;
+}
+
+.maint-ticker__track {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: maint-scroll 40s linear infinite;
+  will-change: transform;
+}
+
+.maint-ticker__track span {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  padding: 0 6px;
+}
+
+@keyframes maint-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Right — ETA */
+.maint-ticker__eta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px 0 16px;
+  flex-shrink: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  height: 100%;
+  background: rgba(6, 214, 160, 0.05);
+}
+
+.maint-ticker__eta svg {
+  width: 13px;
+  height: 13px;
+  stroke: #06d6a0;
+  flex-shrink: 0;
+}
+
+.maint-ticker__eta span {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #06d6a0;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+/* ── Header center maintenance label ── */
+.header__maint-center {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header__maint-center-text {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
+}
+
+/* ══════════════════════════════════════
    HEADER SHELL
 ══════════════════════════════════════ */
 .header {
@@ -13,10 +185,6 @@
   background: #ffffff;
   border-bottom: 1px solid rgba(255, 107, 43, 0.1);
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  /* ✅ FIXED: was overflow:hidden which clipped the dropdown */
   overflow: visible;
 }
 
@@ -98,13 +266,12 @@
 }
 
 /* ══════════════════════════════════════
-   CENTER MARQUEE TICKER
-   ✅ FIXED: overflow:hidden only on marquee itself, not header
+   CENTER MARQUEE TICKER (normal promo)
 ══════════════════════════════════════ */
 .header__marquee {
   flex: 1;
   min-width: 0;
-  overflow: hidden;           /* ← overflow hidden ONLY here, not on .header */
+  overflow: hidden;
   position: relative;
   height: 36px;
   display: flex;
@@ -162,7 +329,6 @@
   align-items: center;
   gap: 14px;
   flex-shrink: 0;
-  /* ✅ Must be visible so dropdown isn't clipped */
   overflow: visible;
   position: relative;
 }
@@ -216,11 +382,10 @@
 
 /* ── User avatar wrapper ── */
 .header__user {
-  position: relative;   /* ✅ dropdown is positioned relative to this */
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
-  /* ✅ Must NOT clip */
   overflow: visible;
 }
 
@@ -258,7 +423,7 @@
 }
 
 /* ══════════════════════════════════════
-   NEW USER DROPDOWN  (.hd-dropdown)
+   USER DROPDOWN
 ══════════════════════════════════════ */
 .hd-dropdown {
   position: absolute;
@@ -280,7 +445,6 @@
   to   { opacity: 1; transform: scale(1)    translateY(0);    }
 }
 
-/* Profile card at top */
 .hd-dropdown__card {
   display: flex;
   align-items: center;
@@ -329,14 +493,12 @@
   margin: 0;
 }
 
-/* Divider */
 .hd-dropdown__divider {
   height: 1px;
   background: #f2f2f2;
   margin: 0;
 }
 
-/* Menu list */
 .hd-dropdown__list {
   list-style: none;
   margin: 6px 0;
@@ -392,7 +554,6 @@
   color: #ff6b2b;
 }
 
-/* Logout */
 .hd-dropdown__logout {
   display: flex;
   align-items: center;
@@ -632,4 +793,15 @@
 .loc-list li:hover {
   background: rgba(255, 107, 43, 0.07);
   color: #ff6b2b;
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media (max-width: 768px) {
+  .header { padding: 0 16px; gap: 10px; }
+  .header__username { display: none; }
+  .header__loc { max-width: 130px; }
+  .maint-ticker__eta { display: none; }
+  .maint-ticker__badge span:last-child { display: none; }
 }

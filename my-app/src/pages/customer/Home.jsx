@@ -124,6 +124,7 @@ function MaintenanceBanner({ settings }) {
           Our engineering team is performing planned server upgrades and infrastructure
           enhancements to make Foodie faster, more reliable, and better than ever. Some
           features may be temporarily unavailable during this window.
+          Thankyou for you patience and co-operation.
         </p>
 
         {/* Timeline block */}
