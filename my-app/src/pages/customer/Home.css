@@ -54,7 +54,6 @@ button { font-family:inherit; cursor:pointer; }
   to   { opacity: 1; transform: translateY(0);      max-height: 600px; }
 }
 
-/* Animated grid overlay */
 .maintenance-banner__grid {
   position: absolute;
   inset: 0;
@@ -70,7 +69,6 @@ button { font-family:inherit; cursor:pointer; }
   to   { background-position: 40px 40px; }
 }
 
-/* Glow blobs */
 .maintenance-banner::before,
 .maintenance-banner::after {
   content: '';
@@ -95,7 +93,6 @@ button { font-family:inherit; cursor:pointer; }
   to   { transform: scale(1.15) translate(20px, -20px); }
 }
 
-/* Dismiss button */
 .maintenance-banner__dismiss {
   position: absolute;
   top: 18px; right: 20px;
@@ -114,7 +111,6 @@ button { font-family:inherit; cursor:pointer; }
   color: #fff;
 }
 
-/* Inner layout */
 .maintenance-banner__inner {
   position: relative;
   z-index: 1;
@@ -123,7 +119,6 @@ button { font-family:inherit; cursor:pointer; }
   padding: 44px 64px 40px;
 }
 
-/* Header row */
 .maintenance-banner__header {
   display: flex;
   align-items: center;
@@ -171,7 +166,6 @@ button { font-family:inherit; cursor:pointer; }
   50%       { box-shadow: 0 0 0 6px rgba(255,214,10,.05); }
 }
 
-/* Title */
 .maintenance-banner__title {
   font-family: 'Syne', sans-serif;
   font-size: clamp(1.5rem, 3vw, 2.2rem);
@@ -182,7 +176,6 @@ button { font-family:inherit; cursor:pointer; }
   margin-bottom: 14px;
 }
 
-/* Body text */
 .maintenance-banner__message {
   font-size: .92rem;
   font-weight: 400;
@@ -192,7 +185,6 @@ button { font-family:inherit; cursor:pointer; }
   margin-bottom: 28px;
 }
 
-/* Timeline block */
 .maintenance-banner__timeline {
   display: flex;
   align-items: center;
@@ -245,7 +237,6 @@ button { font-family:inherit; cursor:pointer; }
   flex-shrink: 0;
 }
 
-/* Reassurance pills */
 .maintenance-banner__reassurance {
   display: flex;
   flex-wrap: wrap;
@@ -267,7 +258,6 @@ button { font-family:inherit; cursor:pointer; }
 }
 .maintenance-banner__pill svg { flex-shrink: 0; opacity: .6; }
 
-/* Responsive */
 @media (max-width: 768px) {
   .maintenance-banner__inner {
     padding: 32px 24px 28px;
@@ -409,7 +399,7 @@ button { font-family:inherit; cursor:pointer; }
 
 
 /* ══════════════════════════════════════
-   CATEGORY CHIPS
+   CATEGORY CHIPS  (real data from DB)
 ══════════════════════════════════════ */
 .categories { display:flex; gap:10px; flex-wrap:wrap; }
 
@@ -421,6 +411,7 @@ button { font-family:inherit; cursor:pointer; }
   font-family: 'Plus Jakarta Sans',sans-serif;
   font-size: .82rem; font-weight: 600; color: var(--charcoal);
   transition: all .2s; box-shadow: var(--shadow-sm);
+  text-transform: capitalize;
 }
 .cat-chip span { font-size:1.15rem; }
 .cat-chip:hover {
@@ -432,6 +423,16 @@ button { font-family:inherit; cursor:pointer; }
   background: var(--grad1); border-color: transparent;
   color: #fff; box-shadow: 0 6px 20px rgba(255,59,122,.35);
   transform: translateY(-2px);
+}
+
+/* Category chip skeleton */
+.cat-chip-skeleton {
+  height: 42px;
+  border-radius: 100px;
+  background: linear-gradient(90deg,#f0e8df 25%,#f8f0e8 50%,#f0e8df 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  flex-shrink: 0;
 }
 
 
@@ -511,7 +512,7 @@ button { font-family:inherit; cursor:pointer; }
 .stars { font-size:.76rem; color:var(--orange); white-space:nowrap; }
 .stars em { font-style:normal; color:var(--muted); margin-left:4px; font-size:.7rem; }
 
-.r-card__cuisines { font-size:.78rem; color:var(--muted); margin-bottom:10px; }
+.r-card__cuisines { font-size:.78rem; color:var(--muted); margin-bottom:10px; text-transform:capitalize; }
 
 .r-card__hours {
   display: flex; align-items: center; gap: 10px;

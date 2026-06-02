@@ -26,7 +26,9 @@ const CAT_EMOJI = {
   seafood: "🦞", vegan: "🌱", sandwich: "🥪", coffee: "☕",
   biryani: "🍛", south: "🥘", north: "🍲", street: "🌯",
   snacks: "🍟", juice: "🥤", sweets: "🍮", rolls: "🌯",
-  both: "🍽", veg: "🥦",
+  both: "🍽", veg: "🥦", drinks: "🥤", starters: "🥙",
+  rice: "🍚", soup: "🍵", wraps: "🌯", chicken: "🍗",
+  dal: "🫘", roti: "🫓", fish: "🐟", eggs: "🥚",
   default: "🍽",
 };
 
@@ -88,10 +90,8 @@ function MaintenanceBanner({ settings }) {
 
   return (
     <div className="maintenance-banner" role="alert" aria-live="polite">
-      {/* Animated grid pattern overlay */}
       <div className="maintenance-banner__grid" aria-hidden="true" />
 
-      {/* Dismiss */}
       <button
         className="maintenance-banner__dismiss"
         onClick={() => setVisible(false)}
@@ -101,7 +101,6 @@ function MaintenanceBanner({ settings }) {
       </button>
 
       <div className="maintenance-banner__inner">
-        {/* Icon + Status row */}
         <div className="maintenance-banner__header">
           <span className="maintenance-banner__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -115,7 +114,6 @@ function MaintenanceBanner({ settings }) {
           <span className="maintenance-banner__status-dot" aria-hidden="true" />
         </div>
 
-        {/* Main message */}
         <h2 className="maintenance-banner__title">
           We're improving your experience
         </h2>
@@ -124,10 +122,9 @@ function MaintenanceBanner({ settings }) {
           Our engineering team is performing planned server upgrades and infrastructure
           enhancements to make Foodie faster, more reliable, and better than ever. Some
           features may be temporarily unavailable during this window.
-          Thankyou for you patience and co-operation.
+          Thank you for your patience and co-operation.
         </p>
 
-        {/* Timeline block */}
         {(startFormatted || endFormatted) && (
           <div className="maintenance-banner__timeline">
             {startFormatted && (
@@ -162,7 +159,6 @@ function MaintenanceBanner({ settings }) {
           </div>
         )}
 
-        {/* Reassurance row */}
         <div className="maintenance-banner__reassurance">
           <span className="maintenance-banner__pill">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12">
@@ -530,6 +526,20 @@ function BookingModal({ restaurant, onClose }) {
 
 
 /* ══════════════════════════════════════
+   CATEGORY CHIP SKELETON
+══════════════════════════════════════ */
+function CategorySkeletons() {
+  return (
+    <div className="categories">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="cat-chip-skeleton" style={{ width: `${70 + i * 15}px` }} />
+      ))}
+    </div>
+  );
+}
+
+
+/* ══════════════════════════════════════
    MAIN HOME PAGE
 ══════════════════════════════════════ */
 export default function Home() {
@@ -540,11 +550,16 @@ export default function Home() {
   const [loading, setLoading]         = useState(true);
   const [foodLoading, setFoodLoading] = useState(true);
   const [search, setSearch]           = useState("");
-  const [activeCategory, setActiveCat]= useState("");
-  const [booking, setBooking]         = useState(null);
-  const [mounted, setMounted]         = useState(false);
-  const [toast, setToast]             = useState(null);
-  const [openMap, setOpenMap]         = useState({});
+
+  /* ── Category state: derived from real food data ── */
+  const [foodCategories, setFoodCategories] = useState([]);
+  const [catLoading, setCatLoading]         = useState(true);
+  const [activeCategory, setActiveCat]      = useState("");
+
+  const [booking, setBooking]   = useState(null);
+  const [mounted, setMounted]   = useState(false);
+  const [toast, setToast]       = useState(null);
+  const [openMap, setOpenMap]   = useState({});
 
   /* ── Maintenance state ── */
   const [maintenanceSettings, setMaintenanceSettings] = useState(null);
@@ -566,7 +581,6 @@ export default function Home() {
       if (!s) return;
 
       if (s.maintenanceMode) {
-        /* If scheduled, check the window */
         if (s.maintenanceStartDate && s.maintenanceEndDate) {
           const now   = new Date();
           const start = new Date(s.maintenanceStartDate);
@@ -576,13 +590,11 @@ export default function Home() {
             setMaintenanceSettings(s);
           }
         } else {
-          /* No schedule — always active */
           setMaintenanceActive(true);
           setMaintenanceSettings(s);
         }
       }
     } catch (err) {
-      /* Silently fail — don't crash homepage over a settings error */
       console.warn("Could not fetch settings:", err);
     }
   }, []);
@@ -644,14 +656,31 @@ export default function Home() {
 
       try {
         setFoodLoading(true);
+        setCatLoading(true);
+
         const foodRes = await axios.get(`${API_URL}/api/merchant-food/all-foods`);
         const foods = (foodRes.data.foods || []).map((f) => ({
           ...f,
           restaurantName: merchantMap[f.merchantId] || "Unknown restaurant",
           restaurantId:   f.merchantId,
         }));
+
         setFoodItems(foods);
         setMenuItems([...foods].sort(() => Math.random() - 0.5).slice(0, 12));
+
+        /* ── Derive unique categories from real food data ── */
+        const uniqueCategories = [
+          ...new Set(
+            foods
+              .map((f) => f.category)
+              .filter(Boolean)
+              .map((c) => c.trim())
+              .filter((c) => c.length > 0)
+          ),
+        ].slice(0, 16); // cap at 16 to keep UI tidy
+
+        setFoodCategories(uniqueCategories);
+
       } catch (foodErr) {
         console.warn("Could not load food items:", foodErr);
         const items = [];
@@ -667,8 +696,10 @@ export default function Home() {
         });
         setFoodItems(items);
         setMenuItems(items.sort(() => Math.random() - 0.5).slice(0, 12));
+        setFoodCategories([]);
       } finally {
         setFoodLoading(false);
+        setCatLoading(false);
       }
     } catch (e) {
       console.error(e);
@@ -677,20 +708,13 @@ export default function Home() {
     }
   };
 
-  const categories = [
-    ...new Set(
-      restaurants
-        .map((r) => r.restaurantType)
-        .filter(Boolean)
-        .map((t) => t.toString().trim())
-    ),
-  ].slice(0, 14);
-
   const handleSearch = (q) => {
     setSearch(q);
     applyFilter(q, activeCategory);
   };
 
+  /* ── Category filter: matches food items whose category matches,
+        then shows only the restaurants those foods belong to ── */
   const handleCategory = (cat) => {
     const next = activeCategory === cat ? "" : cat;
     setActiveCat(next);
@@ -699,19 +723,35 @@ export default function Home() {
 
   const applyFilter = (q, cat) => {
     let list = restaurants;
-    if (q)
+
+    if (q) {
       list = list.filter(
         (r) =>
           r.restaurantName?.toLowerCase().includes(q.toLowerCase()) ||
           r.restaurantType?.toLowerCase().includes(q.toLowerCase()) ||
           r.restaurantAddress?.toLowerCase().includes(q.toLowerCase())
       );
-    if (cat)
-      list = list.filter((r) =>
-        r.restaurantType?.toLowerCase().includes(cat.toLowerCase())
+    }
+
+    if (cat) {
+      /* Find restaurant IDs that have at least one food in this category */
+      const restaurantIdsWithCat = new Set(
+        foodItems
+          .filter((f) => f.category?.toLowerCase() === cat.toLowerCase())
+          .map((f) => f.restaurantId)
       );
+      list = list.filter((r) => restaurantIdsWithCat.has(r._id));
+    }
+
     setFiltered(list);
   };
+
+  /* Filtered food items when a category is active */
+  const displayedFoodItems = activeCategory
+    ? foodItems.filter(
+        (f) => f.category?.toLowerCase() === activeCategory.toLowerCase()
+      )
+    : foodItems;
 
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0);
 
@@ -775,12 +815,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── CATEGORIES ── */}
-      {categories.length > 0 && (
-        <section className="section">
-          <h2 className="section__title">What are you craving?</h2>
+      {/* ── CATEGORIES (from real food data) ── */}
+      <section className="section">
+        <h2 className="section__title">What are you craving?</h2>
+
+        {catLoading ? (
+          <CategorySkeletons />
+        ) : foodCategories.length > 0 ? (
           <div className="categories">
-            {categories.map((c) => (
+            {foodCategories.map((c) => (
               <button
                 key={c}
                 className={`cat-chip ${activeCategory === c ? "cat-chip--active" : ""}`}
@@ -791,8 +834,8 @@ export default function Home() {
               </button>
             ))}
           </div>
-        </section>
-      )}
+        ) : null}
+      </section>
 
       {/* ── RESTAURANTS ── */}
       <section className="section">
@@ -828,11 +871,13 @@ export default function Home() {
       <section className="section">
         <div className="section__head">
           <div>
-            <h2 className="section__title">Popular Dishes</h2>
+            <h2 className="section__title">
+              {activeCategory ? `${activeCategory} Dishes` : "Popular Dishes"}
+            </h2>
             <p className="section__sub">Order directly from our top picks</p>
           </div>
-          {!foodLoading && foodItems.length > 0 && (
-            <span className="section__count">{foodItems.length} items</span>
+          {!foodLoading && displayedFoodItems.length > 0 && (
+            <span className="section__count">{displayedFoodItems.length} items</span>
           )}
         </div>
 
@@ -840,7 +885,7 @@ export default function Home() {
           <div className="food-grid">
             {[...Array(8)].map((_, i) => <div key={i} className="food-skeleton" />)}
           </div>
-        ) : foodItems.length === 0 ? (
+        ) : displayedFoodItems.length === 0 ? (
           <div className="empty">
             <span>🍽</span>
             <h3>No food items found</h3>
@@ -848,7 +893,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="food-grid">
-            {foodItems.map((item, i) => (
+            {displayedFoodItems.map((item, i) => (
               <FoodItemCard
                 key={item._id || i}
                 item={item}
