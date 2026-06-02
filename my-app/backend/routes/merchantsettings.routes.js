@@ -7,6 +7,7 @@ const router  = express.Router();
 const multer  = require("multer");
 const path    = require("path");
 const User    = require("../models/User");
+const createLog = require("../utils/createLog");
 
 /* ── Multer config ── */
 const storage = multer.diskStorage({
@@ -52,7 +53,6 @@ router.get("/settings/:id", async (req, res) => {
 /* ==============================================
    PUT /api/merchant-settings/settings/:id
    Update editable fields + optional new image
-   Includes table reservation config fields
    ============================================== */
 router.put(
   "/settings/:id",
@@ -78,11 +78,9 @@ router.put(
       ];
       allowedTable.forEach(f => {
         if (req.body[f] !== undefined) {
-          /* tableReservationEnabled comes as string "true"/"false" from FormData */
           if (f === "tableReservationEnabled") {
             user[f] = req.body[f] === "true" || req.body[f] === true;
           } else {
-            /* numeric fields */
             user[f] = req.body[f] !== "" ? Number(req.body[f]) : undefined;
           }
         }
@@ -91,6 +89,14 @@ router.put(
       if (req.file) user.restaurantImage = `/uploads/${req.file.filename}`;
 
       await user.save();
+
+      await createLog({
+        user:   user.restaurantName || user.name,
+        role:   "merchant",
+        action: `Updated restaurant settings${req.file ? " (including image)" : ""}`,
+        status: "Success",
+      });
+
       res.status(200).json({ success: true, message: "Settings updated", merchant: user });
     } catch (err) {
       console.error(err);
@@ -108,8 +114,15 @@ router.patch("/settings/:id/online", async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: "Merchant not found" });
 
-    user.isOnline = req.body.isOnline;   // true | false
+    user.isOnline = req.body.isOnline;
     await user.save();
+
+    await createLog({
+      user:   user.restaurantName || user.name,
+      role:   "merchant",
+      action: `Restaurant marked ${user.isOnline ? "Online" : "Offline"}`,
+      status: "Success",
+    });
 
     res.status(200).json({ success: true, isOnline: user.isOnline });
   } catch (err) {
@@ -129,6 +142,13 @@ router.patch("/settings/:id/table-reservation", async (req, res) => {
 
     user.tableReservationEnabled = Boolean(req.body.tableReservationEnabled);
     await user.save();
+
+    await createLog({
+      user:   user.restaurantName || user.name,
+      role:   "merchant",
+      action: `Table reservation ${user.tableReservationEnabled ? "enabled" : "disabled"}`,
+      status: "Success",
+    });
 
     res.status(200).json({
       success: true,

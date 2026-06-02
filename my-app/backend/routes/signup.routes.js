@@ -1,16 +1,15 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const bcrypt  = require("bcryptjs");
+const jwt     = require("jsonwebtoken");
 
 const router = express.Router();
 
-const User = require("../models/User");
+const User      = require("../models/User");
 const createLog = require("../utils/createLog");
 
 /* =========================
    SIGNUP ROUTE
 ========================= */
-
 router.post("/signup", async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -18,13 +17,12 @@ router.post("/signup", async (req, res) => {
     /* =========================
        CHECK USER EXISTS
     ========================= */
-
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       await createLog({
-        user: email,
-        role: role || "Unknown",
+        user:   email,
+        role:   role || "Unknown",
         action: "Signup attempt with already registered email",
         status: "Warning",
       });
@@ -37,13 +35,11 @@ router.post("/signup", async (req, res) => {
     /* =========================
        HASH PASSWORD
     ========================= */
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
     /* =========================
        CREATE USER
     ========================= */
-
     const newUser = new User({
       name,
       email,
@@ -56,7 +52,6 @@ router.post("/signup", async (req, res) => {
     /* =========================
        GENERATE JWT
     ========================= */
-
     const token = jwt.sign(
       { id: newUser._id, role: newUser.role },
       process.env.JWT_SECRET,
@@ -66,10 +61,9 @@ router.post("/signup", async (req, res) => {
     /* =========================
        LOG SUCCESSFUL SIGNUP
     ========================= */
-
     await createLog({
-      user: newUser.name,
-      role: newUser.role,
+      user:   newUser.name,
+      role:   newUser.role,
       action: "Registered a new account on the platform",
       status: "Success",
     });
@@ -77,23 +71,19 @@ router.post("/signup", async (req, res) => {
     /* =========================
        SUCCESS RESPONSE
     ========================= */
-
     res.status(201).json({
       message: "Signup Successful",
       token,
       user: {
-        id: newUser._id,
-        name: newUser.name,
+        id:    newUser._id,
+        name:  newUser.name,
         email: newUser.email,
-        role: newUser.role,
+        role:  newUser.role,
       },
     });
   } catch (error) {
     console.log(error);
-
-    res.status(500).json({
-      message: "Server Error",
-    });
+    res.status(500).json({ message: "Server Error" });
   }
 });
 

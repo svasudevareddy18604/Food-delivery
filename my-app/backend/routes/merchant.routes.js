@@ -3,6 +3,7 @@ const router  = express.Router();
 const multer  = require("multer");
 const path    = require("path");
 const User    = require("../models/User");
+const createLog = require("../utils/createLog");
 
 /* =========================
    MULTER CONFIG
@@ -70,6 +71,13 @@ router.put("/register/:id", upload.single("restaurantImage"), async (req, res) =
 
     await user.save();
 
+    await createLog({
+      user:   user.name,
+      role:   user.role,
+      action: "Submitted merchant registration",
+      status: "Success",
+    });
+
     res.status(200).json({
       success: true,
       message: "Merchant Registration Submitted",
@@ -87,14 +95,21 @@ router.put("/register/:id", upload.single("restaurantImage"), async (req, res) =
 router.get("/approved-restaurants", async (req, res) => {
   try {
     const restaurants = await User.find({
-      role:                    "merchant",
-      registrationCompleted:   true,
-      isApproved:              true,
+      role:                  "merchant",
+      registrationCompleted: true,
+      isApproved:            true,
     })
       .select(
         "_id restaurantName restaurantType restaurantAddress openingTime closingTime phoneNumber restaurantImage tableReservationEnabled isOnline location"
       )
       .sort({ createdAt: -1 });
+
+    await createLog({
+      user:   "System",
+      role:   "System",
+      action: "Fetched approved restaurants list",
+      status: "Success",
+    });
 
     res.status(200).json({
       success:          true,
@@ -119,6 +134,13 @@ router.get("/:id", async (req, res) => {
     if (!user) {
       return res.status(404).json({ success: false, message: "Merchant not found" });
     }
+
+    await createLog({
+      user:   user.name,
+      role:   user.role,
+      action: "Fetched single merchant profile",
+      status: "Success",
+    });
 
     res.status(200).json({ success: true, user });
   } catch (error) {

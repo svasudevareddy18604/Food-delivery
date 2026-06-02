@@ -2,7 +2,8 @@ const express   = require("express");
 const mongoose  = require("mongoose");
 const router    = express.Router();
 const Order     = require("../models/Order");
-const User      = require("../models/User"); // ← make sure this path is correct
+const User      = require("../models/User");
+const createLog = require("../utils/createLog");
 
 const ALLOWED_STATUSES = ["PLACED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"];
 
@@ -23,6 +24,13 @@ router.get("/customer/:customerId", async (req, res) => {
     const orders = await Order.find({ customerId: req.params.customerId })
       .populate("customerId", "name phone email")
       .sort({ createdAt: -1 });
+
+    await createLog({
+      user:   req.params.customerId,
+      role:   "Customer",
+      action: "Fetched own order history",
+      status: "Success",
+    });
 
     res.status(200).json({ success: true, orders });
   } catch (error) {
@@ -45,6 +53,13 @@ router.get("/merchant/:merchantId", async (req, res) => {
         (STATUS_PRIORITY[a.orderStatus] ?? 99) -
         (STATUS_PRIORITY[b.orderStatus] ?? 99)
     );
+
+    await createLog({
+      user:   req.params.merchantId,
+      role:   "Merchant",
+      action: "Fetched own orders list",
+      status: "Success",
+    });
 
     res.status(200).json({ success: true, merchantId: req.params.merchantId, orders: sorted });
   } catch (error) {
@@ -75,6 +90,13 @@ router.put("/:orderId/status", async (req, res) => {
     if (!updatedOrder)
       return res.status(404).json({ success: false, message: "Order not found" });
 
+    await createLog({
+      user:   updatedOrder.merchantId?.toString() || "Unknown",
+      role:   "Merchant",
+      action: `Updated order status to ${orderStatus} for order: ${orderId}`,
+      status: "Success",
+    });
+
     res.status(200).json({ success: true, message: "Order status updated", order: updatedOrder });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -96,6 +118,13 @@ router.get("/:orderId", async (req, res) => {
 
     if (!order)
       return res.status(404).json({ success: false, message: "Order not found" });
+
+    await createLog({
+      user:   order.customerId?.name || order.customerId?.toString() || "Unknown",
+      role:   "Customer",
+      action: `Fetched single order: ${orderId}`,
+      status: "Success",
+    });
 
     res.status(200).json({ success: true, order });
   } catch (error) {

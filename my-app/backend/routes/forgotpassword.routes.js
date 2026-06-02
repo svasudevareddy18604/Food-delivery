@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 
 const User = require("../models/User");
 const PasswordReset = require("../models/PasswordReset");
+const createLog = require("../utils/createLog");
 
 const router = express.Router();
 
@@ -84,6 +85,13 @@ router.post("/forgot-password", async (req, res) => {
       `,
     });
 
+    await createLog({
+      user: user.name,
+      role: user.role,
+      action: "Requested password reset OTP",
+      status: "Success",
+    });
+
     return res.status(200).json({
       success: true,
       message: "OTP sent successfully",
@@ -126,6 +134,15 @@ router.post("/verify-otp", async (req, res) => {
         message: "OTP expired",
       });
     }
+
+    const user = await User.findOne({ email });
+
+    await createLog({
+      user: user?.name || email,
+      role: user?.role || "Customer",
+      action: "Verified password reset OTP",
+      status: "Success",
+    });
 
     return res.status(200).json({
       success: true,
@@ -186,6 +203,15 @@ router.post("/reset-password", async (req, res) => {
 
     await PasswordReset.deleteOne({
       email,
+    });
+
+    const user = await User.findOne({ email });
+
+    await createLog({
+      user: user?.name || email,
+      role: user?.role || "Customer",
+      action: "Reset account password",
+      status: "Success",
     });
 
     return res.status(200).json({
