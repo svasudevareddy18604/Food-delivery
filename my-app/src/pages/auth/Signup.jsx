@@ -152,7 +152,7 @@ function Signup() {
                     <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm1 10H7V7h2v4zm0-6H7V3h2v2z"/></svg>
                     Get Started
                   </div>
-                  <h2>Join OmniRetail</h2>
+                  <h2>Join Foodie</h2>
                   <p>Choose how you'd like to use the platform</p>
                 </div>
                 <div className="role-cards">
