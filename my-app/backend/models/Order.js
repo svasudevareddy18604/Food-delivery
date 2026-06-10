@@ -5,7 +5,6 @@ const orderSchema = new mongoose.Schema({
   /* =========================
      ORDER NUMBER
   ========================= */
-
   orderNumber: {
     type: String,
     required: true,
@@ -15,7 +14,6 @@ const orderSchema = new mongoose.Schema({
   /* =========================
      CUSTOMER + MERCHANT
   ========================= */
-
   customerId: {
     type: String,
     required: true,
@@ -29,7 +27,6 @@ const orderSchema = new mongoose.Schema({
   /* =========================
      CUSTOMER SNAPSHOT
   ========================= */
-
   customerName: {
     type: String,
     default: "Customer",
@@ -43,36 +40,19 @@ const orderSchema = new mongoose.Schema({
   /* =========================
      ORDER ITEMS
   ========================= */
-
   items: [
     {
-      foodId: {
-        type: String,
-      },
-
-      name: {
-        type: String,
-      },
-
-      image: {
-        type: String,
-      },
-
-      price: {
-        type: Number,
-      },
-
-      quantity: {
-        type: Number,
-        default: 1,
-      },
+      foodId:   { type: String },
+      name:     { type: String },
+      image:    { type: String },
+      price:    { type: Number },
+      quantity: { type: Number, default: 1 },
     },
   ],
 
   /* =========================
      DELIVERY ADDRESS
   ========================= */
-
   address: {
     type: String,
     required: true,
@@ -81,7 +61,6 @@ const orderSchema = new mongoose.Schema({
   /* =========================
      PAYMENT
   ========================= */
-
   paymentMethod: {
     type: String,
     enum: ["COD", "ONLINE"],
@@ -97,25 +76,24 @@ const orderSchema = new mongoose.Schema({
   /* =========================
      ORDER STATUS
   ========================= */
-
   orderStatus: {
     type: String,
-
-    enum: [
-      "PLACED",
-      "PREPARING",
-      "OUT_FOR_DELIVERY",
-      "DELIVERED",
-      "CANCELLED",
-    ],
-
+    enum: ["PLACED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
     default: "PLACED",
+  },
+
+  /* =========================
+     DELIVERY PARTNER
+  ========================= */
+  deliveryPartnerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
   },
 
   /* =========================
      TOTAL
   ========================= */
-
   totalAmount: {
     type: Number,
     required: true,
@@ -124,20 +102,9 @@ const orderSchema = new mongoose.Schema({
   /* =========================
      RAZORPAY
   ========================= */
+  razorpayOrderId:   { type: String },
+  razorpayPaymentId: { type: String },
 
-  razorpayOrderId: {
-    type: String,
-  },
+}, { timestamps: true });
 
-  razorpayPaymentId: {
-    type: String,
-  },
-
-}, {
-
-  timestamps: true
-
-});
-
-module.exports =
-  mongoose.model("Order", orderSchema);
+module.exports = mongoose.model("Order", orderSchema);
