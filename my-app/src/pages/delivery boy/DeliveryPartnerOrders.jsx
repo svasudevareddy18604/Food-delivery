@@ -1,93 +1,62 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import Layout from "../../components/delivery partners/Layout";
 import "./DeliveryPartnerOrders.css";
 
-/* ─── Mock data ─────────────────────────────────────────────── */
-const MOCK_ORDERS = [
-  {
-    id: "ORD-4821",
-    status: "pending",
-    restaurant: { name: "Spice Garden", address: "12 MG Road, Bengaluru" },
-    customer: { name: "Rohan Mehta", address: "45 Indiranagar, Bengaluru", phone: "+91 98765 43210" },
-    items: [{ name: "Butter Chicken", qty: 2 }, { name: "Garlic Naan", qty: 4 }],
-    distance: "3.2 km",
-    estimatedTime: "18 min",
-    payment: { method: "Online", amount: 648 },
-    placedAt: "2 min ago",
-  },
-  {
-    id: "ORD-4820",
-    status: "accepted",
-    restaurant: { name: "The Burger Co.", address: "8 Koramangala, Bengaluru" },
-    customer: { name: "Priya Sharma", address: "22 HSR Layout, Bengaluru", phone: "+91 91234 56789" },
-    items: [{ name: "Double Smash Burger", qty: 1 }, { name: "Loaded Fries", qty: 1 }, { name: "Coke", qty: 2 }],
-    distance: "5.1 km",
-    estimatedTime: "26 min",
-    payment: { method: "Cash", amount: 420 },
-    placedAt: "8 min ago",
-  },
-  {
-    id: "ORD-4819",
-    status: "picked_up",
-    restaurant: { name: "Dosa Express", address: "3 Jayanagar, Bengaluru" },
-    customer: { name: "Kavya Nair", address: "77 BTM Layout, Bengaluru", phone: "+91 99887 76655" },
-    items: [{ name: "Masala Dosa", qty: 3 }, { name: "Filter Coffee", qty: 2 }],
-    distance: "2.4 km",
-    estimatedTime: "12 min",
-    payment: { method: "Online", amount: 310 },
-    placedAt: "15 min ago",
-  },
-  {
-    id: "ORD-4818",
-    status: "delivered",
-    restaurant: { name: "Pizza Planet", address: "9 Whitefield, Bengaluru" },
-    customer: { name: "Amit Joshi", address: "14 ITPL Road, Bengaluru", phone: "+91 88999 11223" },
-    items: [{ name: "Margherita (L)", qty: 1 }, { name: "Pepperoni (M)", qty: 1 }],
-    distance: "6.8 km",
-    estimatedTime: "—",
-    payment: { method: "Online", amount: 780 },
-    placedAt: "42 min ago",
-  },
-  {
-    id: "ORD-4817",
-    status: "cancelled",
-    restaurant: { name: "Sushi Zen", address: "5 UB City, Bengaluru" },
-    customer: { name: "Sneha Pillai", address: "30 Sadashivanagar, Bengaluru", phone: "+91 77888 33445" },
-    items: [{ name: "Dragon Roll", qty: 2 }],
-    distance: "7.3 km",
-    estimatedTime: "—",
-    payment: { method: "Online", amount: 560 },
-    placedAt: "1 hr ago",
-  },
-];
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+/* ─── Status mapping: backend → UI ──────────────────────────── */
 const STATUS_CONFIG = {
-  pending:   { label: "New",        color: "var(--s-amber)",  bg: "var(--s-amber-bg)",  dot: "#f59e0b" },
-  accepted:  { label: "Accepted",   color: "var(--s-blue)",   bg: "var(--s-blue-bg)",   dot: "#3b82f6" },
-  picked_up: { label: "Picked Up",  color: "var(--s-purple)", bg: "var(--s-purple-bg)", dot: "#a855f7" },
-  delivered: { label: "Delivered",  color: "var(--s-green)",  bg: "var(--s-green-bg)",  dot: "#22c55e" },
-  cancelled: { label: "Cancelled",  color: "var(--s-red)",    bg: "var(--s-red-bg)",    dot: "#ef4444" },
+  PLACED: {
+    label: "New",
+    color: "var(--s-amber)",
+    bg: "var(--s-amber-bg)",
+    dot: "#f59e0b",
+  },
+  PREPARING: {
+    label: "Preparing",
+    color: "var(--s-blue)",
+    bg: "var(--s-blue-bg)",
+    dot: "#3b82f6",
+  },
+  OUT_FOR_DELIVERY: {
+    label: "Picked Up",
+    color: "var(--s-purple)",
+    bg: "var(--s-purple-bg)",
+    dot: "#a855f7",
+  },
+  DELIVERED: {
+    label: "Delivered",
+    color: "var(--s-green)",
+    bg: "var(--s-green-bg)",
+    dot: "#22c55e",
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    color: "var(--s-red)",
+    bg: "var(--s-red-bg)",
+    dot: "#ef4444",
+  },
 };
 
 const NEXT_STATUS = {
-  pending:   "accepted",
-  accepted:  "picked_up",
-  picked_up: "delivered",
+  PLACED:           "PREPARING",
+  PREPARING:        "OUT_FOR_DELIVERY",
+  OUT_FOR_DELIVERY: "DELIVERED",
 };
 
 const NEXT_LABEL = {
-  pending:   "Accept Order",
-  accepted:  "Mark Picked Up",
-  picked_up: "Mark Delivered",
+  PLACED:           "Accept Order",
+  PREPARING:        "Mark Picked Up",
+  OUT_FOR_DELIVERY: "Mark Delivered",
 };
 
 const TABS = [
-  { key: "all",       label: "All Orders" },
-  { key: "pending",   label: "New" },
-  { key: "accepted",  label: "Accepted" },
-  { key: "picked_up", label: "In Transit" },
-  { key: "delivered", label: "Delivered" },
-  { key: "cancelled", label: "Cancelled" },
+  { key: "all",              label: "All Orders" },
+  { key: "PLACED",           label: "New" },
+  { key: "PREPARING",        label: "Preparing" },
+  { key: "OUT_FOR_DELIVERY", label: "In Transit" },
+  { key: "DELIVERED",        label: "Delivered" },
+  { key: "CANCELLED",        label: "Cancelled" },
 ];
 
 /* ─── Icons ─────────────────────────────────────────────────── */
@@ -118,17 +87,6 @@ const Icon = {
       <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
     </svg>
   ),
-  rupee: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="6" y1="3" x2="18" y2="3"/><line x1="6" y1="8" x2="18" y2="8"/>
-      <line x1="6" y1="13" x2="12" y2="13"/><path d="M6 3v18l6-4 6 4V3"/>
-    </svg>
-  ),
-  chevron: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <path d="M9 18l6-6-6-6"/>
-    </svg>
-  ),
   close: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
       <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -141,6 +99,12 @@ const Icon = {
       <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
     </svg>
   ),
+  refresh: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 4 23 10 17 10"/>
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+    </svg>
+  ),
   empty: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
@@ -150,20 +114,28 @@ const Icon = {
   ),
 };
 
+/* ─── Helpers ────────────────────────────────────────────────── */
+function timeAgo(dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (diff < 60)  return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
+
 /* ─── Order Card ─────────────────────────────────────────────── */
-function OrderCard({ order, onSelect, onStatusChange }) {
-  const cfg = STATUS_CONFIG[order.status];
+function OrderCard({ order, onSelect, onStatusChange, updating }) {
+  const cfg = STATUS_CONFIG[order.orderStatus] || STATUS_CONFIG.PLACED;
 
   return (
     <div
-      className={`oc oc--${order.status}`}
+      className={`oc oc--${order.orderStatus?.toLowerCase()}`}
       onClick={() => onSelect(order)}
     >
-      {/* Header row */}
       <div className="oc__head">
         <div className="oc__id-wrap">
-          <span className="oc__id">{order.id}</span>
-          <span className="oc__time">{order.placedAt}</span>
+          <span className="oc__id">#{order._id?.slice(-6).toUpperCase()}</span>
+          <span className="oc__time">{timeAgo(order.createdAt)}</span>
         </div>
         <span className="oc__badge" style={{ color: cfg.color, background: cfg.bg }}>
           <span className="oc__badge-dot" style={{ background: cfg.dot }} />
@@ -171,72 +143,66 @@ function OrderCard({ order, onSelect, onStatusChange }) {
         </span>
       </div>
 
-      {/* Restaurant */}
       <div className="oc__restaurant">
         <span className="oc__rest-icon">{Icon.bag}</span>
         <div>
-          <p className="oc__rest-name">{order.restaurant.name}</p>
-          <p className="oc__rest-addr">{order.restaurant.address}</p>
+          <p className="oc__rest-name">{order.merchantId?.name || "Restaurant"}</p>
+          <p className="oc__rest-addr">{order.merchantId?.address || "—"}</p>
         </div>
       </div>
 
-      {/* Divider line */}
       <div className="oc__divider" />
 
-      {/* Customer row */}
       <div className="oc__customer">
         <span className="oc__cust-icon">{Icon.pin}</span>
         <div>
-          <p className="oc__cust-name">{order.customer.name}</p>
-          <p className="oc__cust-addr">{order.customer.address}</p>
+          <p className="oc__cust-name">{order.customerId?.name || "Customer"}</p>
+          <p className="oc__cust-addr">{order.deliveryAddress || "—"}</p>
         </div>
       </div>
 
-      {/* Meta chips */}
       <div className="oc__meta">
         <span className="oc__chip">
           {Icon.truck}
-          {order.distance}
+          {order.items?.length || 0} item{order.items?.length !== 1 ? "s" : ""}
         </span>
         <span className="oc__chip">
           {Icon.clock}
-          {order.estimatedTime}
+          {timeAgo(order.createdAt)}
         </span>
-        <span className={`oc__chip oc__chip--pay ${order.payment.method === "Cash" ? "oc__chip--cash" : ""}`}>
-          ₹{order.payment.amount} · {order.payment.method}
+        <span className={`oc__chip oc__chip--pay ${order.paymentMethod === "COD" ? "oc__chip--cash" : ""}`}>
+          ₹{order.totalAmount} · {order.paymentMethod === "COD" ? "Cash" : "Online"}
         </span>
       </div>
 
-      {/* Action button */}
-      {NEXT_STATUS[order.status] && (
+      {NEXT_STATUS[order.orderStatus] && (
         <button
-          className="oc__cta"
+          className={`oc__cta ${updating === order._id ? "oc__cta--loading" : ""}`}
+          disabled={updating === order._id}
           onClick={(e) => {
             e.stopPropagation();
-            onStatusChange(order.id, NEXT_STATUS[order.status]);
+            onStatusChange(order._id, NEXT_STATUS[order.orderStatus]);
           }}
         >
-          {NEXT_LABEL[order.status]}
+          {updating === order._id ? "Updating…" : NEXT_LABEL[order.orderStatus]}
         </button>
       )}
     </div>
   );
 }
 
-/* ─── Order Detail Drawer ────────────────────────────────────── */
-function OrderDrawer({ order, onClose, onStatusChange }) {
-  const cfg = STATUS_CONFIG[order.status];
+/* ─── Order Drawer ───────────────────────────────────────────── */
+function OrderDrawer({ order, onClose, onStatusChange, updating }) {
+  const cfg = STATUS_CONFIG[order.orderStatus] || STATUS_CONFIG.PLACED;
 
   return (
     <div className="od-overlay" onClick={onClose}>
       <div className="od" onClick={(e) => e.stopPropagation()}>
-        {/* Drawer handle */}
         <div className="od__handle" />
 
-        {/* Header */}
         <div className="od__header">
           <div>
-            <h2 className="od__title">{order.id}</h2>
+            <h2 className="od__title">#{order._id?.slice(-6).toUpperCase()}</h2>
             <span className="od__badge" style={{ color: cfg.color, background: cfg.bg }}>
               <span className="od__badge-dot" style={{ background: cfg.dot }} />
               {cfg.label}
@@ -250,12 +216,12 @@ function OrderDrawer({ order, onClose, onStatusChange }) {
           <div className="od__section">
             <h3 className="od__section-title">Order Timeline</h3>
             <div className="od__timeline">
-              {["pending", "accepted", "picked_up", "delivered"].map((s, i) => {
-                const statuses = ["pending", "accepted", "picked_up", "delivered", "cancelled"];
-                const currentIdx = statuses.indexOf(order.status);
-                const stepIdx = ["pending", "accepted", "picked_up", "delivered"].indexOf(s);
-                const done = order.status === "cancelled" ? false : stepIdx <= currentIdx;
-                const active = s === order.status;
+              {["PLACED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED"].map((s, i) => {
+                const steps = ["PLACED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED"];
+                const currentIdx = steps.indexOf(order.orderStatus);
+                const stepIdx = steps.indexOf(s);
+                const done = order.orderStatus !== "CANCELLED" && stepIdx <= currentIdx;
+                const active = s === order.orderStatus;
                 return (
                   <div key={s} className={`od__tl-step ${done ? "od__tl-step--done" : ""} ${active ? "od__tl-step--active" : ""}`}>
                     <div className="od__tl-dot" />
@@ -273,8 +239,8 @@ function OrderDrawer({ order, onClose, onStatusChange }) {
             <div className="od__location-card od__location-card--pickup">
               <span className="od__loc-icon">{Icon.bag}</span>
               <div>
-                <p className="od__loc-name">{order.restaurant.name}</p>
-                <p className="od__loc-addr">{order.restaurant.address}</p>
+                <p className="od__loc-name">{order.merchantId?.name || "Restaurant"}</p>
+                <p className="od__loc-addr">{order.merchantId?.address || "—"}</p>
               </div>
             </div>
           </div>
@@ -285,16 +251,14 @@ function OrderDrawer({ order, onClose, onStatusChange }) {
             <div className="od__location-card od__location-card--delivery">
               <span className="od__loc-icon">{Icon.pin}</span>
               <div>
-                <p className="od__loc-name">{order.customer.name}</p>
-                <p className="od__loc-addr">{order.customer.address}</p>
+                <p className="od__loc-name">{order.customerId?.name || "Customer"}</p>
+                <p className="od__loc-addr">{order.deliveryAddress || "—"}</p>
               </div>
-              <a
-                className="od__call-btn"
-                href={`tel:${order.customer.phone}`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {Icon.phone}
-              </a>
+              {order.customerId?.phone && (
+                <a className="od__call-btn" href={`tel:${order.customerId.phone}`} onClick={(e) => e.stopPropagation()}>
+                  {Icon.phone}
+                </a>
+              )}
             </div>
           </div>
 
@@ -302,15 +266,16 @@ function OrderDrawer({ order, onClose, onStatusChange }) {
           <div className="od__section">
             <h3 className="od__section-title">Order Items</h3>
             <div className="od__items">
-              {order.items.map((item, i) => (
+              {order.items?.map((item, i) => (
                 <div key={i} className="od__item-row">
-                  <span className="od__item-qty">{item.qty}×</span>
+                  <span className="od__item-qty">{item.quantity}×</span>
                   <span className="od__item-name">{item.name}</span>
+                  <span className="od__item-price">₹{item.price * item.quantity}</span>
                 </div>
               ))}
               <div className="od__total-row">
                 <span>Total</span>
-                <span className="od__total-amt">₹{order.payment.amount}</span>
+                <span className="od__total-amt">₹{order.totalAmount}</span>
               </div>
             </div>
           </div>
@@ -318,40 +283,42 @@ function OrderDrawer({ order, onClose, onStatusChange }) {
           {/* Payment */}
           <div className="od__section">
             <h3 className="od__section-title">Payment</h3>
-            <div className={`od__pay-card ${order.payment.method === "Cash" ? "od__pay-card--cash" : "od__pay-card--online"}`}>
-              <span className="od__pay-method">{order.payment.method === "Cash" ? "💵 Cash on Delivery" : "💳 Paid Online"}</span>
-              <span className="od__pay-amount">₹{order.payment.amount}</span>
+            <div className={`od__pay-card ${order.paymentMethod === "COD" ? "od__pay-card--cash" : "od__pay-card--online"}`}>
+              <span className="od__pay-method">
+                {order.paymentMethod === "COD" ? "💵 Cash on Delivery" : "💳 Paid Online"}
+              </span>
+              <span className="od__pay-amount">₹{order.totalAmount}</span>
             </div>
           </div>
 
           {/* Meta */}
           <div className="od__meta-row">
             <div className="od__meta-item">
-              <span className="od__meta-label">Distance</span>
-              <span className="od__meta-value">{order.distance}</span>
-            </div>
-            <div className="od__meta-item">
-              <span className="od__meta-label">Est. Time</span>
-              <span className="od__meta-value">{order.estimatedTime}</span>
+              <span className="od__meta-label">Order ID</span>
+              <span className="od__meta-value">#{order._id?.slice(-6).toUpperCase()}</span>
             </div>
             <div className="od__meta-item">
               <span className="od__meta-label">Placed</span>
-              <span className="od__meta-value">{order.placedAt}</span>
+              <span className="od__meta-value">{timeAgo(order.createdAt)}</span>
+            </div>
+            <div className="od__meta-item">
+              <span className="od__meta-label">Items</span>
+              <span className="od__meta-value">{order.items?.length || 0}</span>
             </div>
           </div>
         </div>
 
-        {/* CTA */}
-        {NEXT_STATUS[order.status] && (
+        {NEXT_STATUS[order.orderStatus] && (
           <div className="od__footer">
             <button
-              className="od__cta"
+              className={`od__cta ${updating === order._id ? "od__cta--loading" : ""}`}
+              disabled={updating === order._id}
               onClick={() => {
-                onStatusChange(order.id, NEXT_STATUS[order.status]);
+                onStatusChange(order._id, NEXT_STATUS[order.orderStatus]);
                 onClose();
               }}
             >
-              {NEXT_LABEL[order.status]}
+              {updating === order._id ? "Updating…" : NEXT_LABEL[order.orderStatus]}
             </button>
           </div>
         )}
@@ -362,109 +329,238 @@ function OrderDrawer({ order, onClose, onStatusChange }) {
 
 /* ─── Main Page ──────────────────────────────────────────────── */
 export default function DeliveryPartnerOrders() {
-  const navigate = useNavigate();
-  const [orders, setOrders] = useState(MOCK_ORDERS);
-  const [activeTab, setActiveTab] = useState("all");
-  const [search, setSearch] = useState("");
+  const [orders, setOrders]             = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState(null);
+  const [activeTab, setActiveTab]       = useState("all");
+  const [search, setSearch]             = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [updating, setUpdating]         = useState(null); // orderId being updated
+  const [lastRefresh, setLastRefresh]   = useState(null);
 
-  const handleStatusChange = useCallback((orderId, nextStatus) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
-    );
+  /* ── Fetch orders for logged-in delivery partner ── */
+  const fetchOrders = useCallback(async (silent = false) => {
+  try {
+    if (!silent) setLoading(true);
+    setError(null);
+
+    // Try all possible keys your app might use
+    const partner =
+      JSON.parse(localStorage.getItem("deliveryPartner") || "null") ||
+      JSON.parse(localStorage.getItem("partner") || "null") ||
+      JSON.parse(localStorage.getItem("user") || "null");
+
+    const token =
+      localStorage.getItem("deliveryToken") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("authToken");
+
+    const partnerId = partner?._id || partner?.id;
+
+    if (!partnerId) {
+      // DEV fallback: log all localStorage keys to find the right one
+      console.log("LocalStorage keys:", Object.keys(localStorage));
+      console.log("LocalStorage values:", { ...localStorage });
+      setError("Partner session not found. Please log in again.");
+      setLoading(false);
+      return;
+    }
+    // ... rest of fetch unchanged
+
+      const res = await fetch(`${BASE_URL}/orders/delivery/${partnerId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+      const data = await res.json();
+      if (data.success) {
+        setOrders(data.orders || []);
+        setLastRefresh(new Date());
+      } else {
+        throw new Error(data.message || "Failed to fetch orders");
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  /* ── Initial load + 30s polling ── */
+  useEffect(() => {
+    fetchOrders();
+    const interval = setInterval(() => fetchOrders(true), 30000);
+    return () => clearInterval(interval);
+  }, [fetchOrders]);
+
+  /* ── Status update ── */
+  const handleStatusChange = useCallback(async (orderId, nextStatus) => {
+    setUpdating(orderId);
+    try {
+      const token = localStorage.getItem("deliveryToken") || localStorage.getItem("token");
+
+      const res = await fetch(`${BASE_URL}/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ orderStatus: nextStatus }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        // Optimistic update
+        setOrders((prev) =>
+          prev.map((o) => (o._id === orderId ? { ...o, orderStatus: nextStatus } : o))
+        );
+        // Also update selected drawer if open
+        setSelectedOrder((prev) =>
+          prev?._id === orderId ? { ...prev, orderStatus: nextStatus } : prev
+        );
+      } else {
+        throw new Error(data.message || "Update failed");
+      }
+    } catch (err) {
+      alert(`Failed to update order: ${err.message}`);
+    } finally {
+      setUpdating(null);
+    }
+  }, []);
+
+  /* ── Filter ── */
   const filtered = orders.filter((o) => {
-    const matchTab = activeTab === "all" || o.status === activeTab;
+    const matchTab = activeTab === "all" || o.orderStatus === activeTab;
     const q = search.toLowerCase();
     const matchSearch =
       !q ||
-      o.id.toLowerCase().includes(q) ||
-      o.restaurant.name.toLowerCase().includes(q) ||
-      o.customer.name.toLowerCase().includes(q);
+      o._id?.toLowerCase().includes(q) ||
+      o.merchantId?.name?.toLowerCase().includes(q) ||
+      o.customerId?.name?.toLowerCase().includes(q);
     return matchTab && matchSearch;
   });
 
   const counts = {};
   orders.forEach((o) => {
-    counts[o.status] = (counts[o.status] || 0) + 1;
+    counts[o.orderStatus] = (counts[o.orderStatus] || 0) + 1;
   });
 
+  /* ── Render ── */
   return (
-    <div className="dpo">
-      {/* ── Page Header ── */}
-      <div className="dpo__header">
-        <div className="dpo__header-left">
-          <h1 className="dpo__title">Orders</h1>
-          <span className="dpo__subtitle">{orders.length} total today</span>
-        </div>
-      </div>
-
-      {/* ── Search ── */}
-      <div className="dpo__search-wrap">
-        <span className="dpo__search-icon">{Icon.search}</span>
-        <input
-          className="dpo__search"
-          placeholder="Search by order ID, restaurant, or customer…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        {search && (
-          <button className="dpo__search-clear" onClick={() => setSearch("")}>
-            {Icon.close}
+    <Layout>
+      <div className="dpo">
+        {/* Header */}
+        <div className="dpo__header">
+          <div className="dpo__header-left">
+            <h1 className="dpo__title">Orders</h1>
+            <span className="dpo__subtitle">
+              {loading ? "Loading…" : `${orders.length} total today`}
+            </span>
+          </div>
+          <button
+            className={`dpo__refresh-btn ${loading ? "dpo__refresh-btn--spinning" : ""}`}
+            onClick={() => fetchOrders()}
+            title="Refresh orders"
+          >
+            {Icon.refresh}
+            {lastRefresh && (
+              <span className="dpo__refresh-time">
+                {lastRefresh.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
           </button>
+        </div>
+
+        {/* Error banner */}
+        {error && (
+          <div className="dpo__error">
+            ⚠️ {error}
+            <button onClick={() => fetchOrders()}>Retry</button>
+          </div>
+        )}
+
+        {/* Search */}
+        <div className="dpo__search-wrap">
+          <span className="dpo__search-icon">{Icon.search}</span>
+          <input
+            className="dpo__search"
+            placeholder="Search by order ID, restaurant, or customer…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button className="dpo__search-clear" onClick={() => setSearch("")}>
+              {Icon.close}
+            </button>
+          )}
+        </div>
+
+        {/* Tabs */}
+        <div className="dpo__tabs">
+          {TABS.map((tab) => {
+            const count = tab.key === "all" ? orders.length : counts[tab.key] || 0;
+            return (
+              <button
+                key={tab.key}
+                className={`dpo__tab ${activeTab === tab.key ? "dpo__tab--active" : ""}`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.label}
+                {count > 0 && <span className="dpo__tab-count">{count}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="dpo__skeleton-grid">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="dpo__skeleton-card">
+                <div className="dpo__skeleton-line dpo__skeleton-line--short" />
+                <div className="dpo__skeleton-line" />
+                <div className="dpo__skeleton-line dpo__skeleton-line--short" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="dpo__empty">
+            <span className="dpo__empty-icon">{Icon.empty}</span>
+            <p className="dpo__empty-title">No orders found</p>
+            <p className="dpo__empty-sub">
+              {search
+                ? `No results for "${search}"`
+                : "There are no orders in this category yet."}
+            </p>
+          </div>
+        ) : (
+          <div className="dpo__grid">
+            {filtered.map((order) => (
+              <OrderCard
+                key={order._id}
+                order={order}
+                onSelect={setSelectedOrder}
+                onStatusChange={handleStatusChange}
+                updating={updating}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Detail Drawer */}
+        {selectedOrder && (
+          <OrderDrawer
+            order={orders.find((o) => o._id === selectedOrder._id) || selectedOrder}
+            onClose={() => setSelectedOrder(null)}
+            onStatusChange={handleStatusChange}
+            updating={updating}
+          />
         )}
       </div>
-
-      {/* ── Tabs ── */}
-      <div className="dpo__tabs">
-        {TABS.map((tab) => {
-          const count = tab.key === "all" ? orders.length : counts[tab.key] || 0;
-          return (
-            <button
-              key={tab.key}
-              className={`dpo__tab ${activeTab === tab.key ? "dpo__tab--active" : ""}`}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              {tab.label}
-              {count > 0 && (
-                <span className="dpo__tab-count">{count}</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Orders Grid ── */}
-      {filtered.length === 0 ? (
-        <div className="dpo__empty">
-          <span className="dpo__empty-icon">{Icon.empty}</span>
-          <p className="dpo__empty-title">No orders found</p>
-          <p className="dpo__empty-sub">
-            {search ? `No results for "${search}"` : "There are no orders in this category yet."}
-          </p>
-        </div>
-      ) : (
-        <div className="dpo__grid">
-          {filtered.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              onSelect={setSelectedOrder}
-              onStatusChange={handleStatusChange}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* ── Detail Drawer ── */}
-      {selectedOrder && (
-        <OrderDrawer
-          order={orders.find((o) => o.id === selectedOrder.id)}
-          onClose={() => setSelectedOrder(null)}
-          onStatusChange={handleStatusChange}
-        />
-      )}
-    </div>
+    </Layout>
   );
 }

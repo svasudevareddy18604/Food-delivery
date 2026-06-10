@@ -30,6 +30,21 @@ router.get("/customer/:customerId", async (req, res) => {
   }
 });
 
+
+// GET orders assigned to a delivery partner
+router.get("/delivery/:partnerId", async (req, res) => {
+  try {
+    const orders = await Order.find({ deliveryPartnerId: req.params.partnerId })
+      .populate("customerId", "name phone email")
+      .populate("merchantId", "name address")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 /* =========================================================
    GET MERCHANT ORDERS
 ========================================================= */

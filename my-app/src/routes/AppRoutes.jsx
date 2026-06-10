@@ -28,6 +28,7 @@ import DeliveryRegistration   from "../pages/delivery boy/DeliveryRegistration";
 import DeliveryReview         from "../pages/delivery boy/DeliveryReview";
 import DeliveryRejected       from "../pages/delivery boy/DeliveryRejected";
 import DeliveryDashboard      from "../pages/delivery boy/DeliveryDashboard";
+import DeliveryPartnerOrders  from "../pages/delivery boy/DeliveryPartnerOrders";
 import DeliveryProtectedRoute from "./DeliveryProtectedRoute";
 
 /* ── Admin ── */
@@ -46,42 +47,11 @@ import Logs from "../pages/admin/Logs";
 ══════════════════════════════ */
 function NotFound() {
   return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#fff9f4",
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
-        gap: 12,
-      }}
-    >
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#fff9f4", fontFamily: "'Plus Jakarta Sans', sans-serif", gap: 12 }}>
       <span style={{ fontSize: "4rem" }}>🍽</span>
-      <h1
-        style={{
-          fontSize: "3rem",
-          fontFamily: "'Syne', sans-serif",
-          color: "#1a1a2e",
-        }}
-      >
-        404
-      </h1>
+      <h1 style={{ fontSize: "3rem", fontFamily: "'Syne', sans-serif", color: "#1a1a2e" }}>404</h1>
       <p style={{ color: "#8b8fa8" }}>This page doesn't exist.</p>
-      <a
-        href="/"
-        style={{
-          marginTop: 8,
-          padding: "10px 24px",
-          borderRadius: 100,
-          background: "linear-gradient(135deg,#ff6b2b,#ff3b7a,#7c3aed)",
-          color: "#fff",
-          fontWeight: 700,
-          textDecoration: "none",
-          fontSize: ".9rem",
-        }}
-      >
+      <a href="/" style={{ marginTop: 8, padding: "10px 24px", borderRadius: 100, background: "linear-gradient(135deg,#ff6b2b,#ff3b7a,#7c3aed)", color: "#fff", fontWeight: 700, textDecoration: "none", fontSize: ".9rem" }}>
         Go Home
       </a>
     </div>
@@ -109,110 +79,34 @@ export default function AppRoutes() {
         <Route path="/delivery-rejected"            element={<DeliveryRejected />} />
 
         {/* ── Customer PUBLIC routes ── */}
-        <Route path="/"                        element={<Home />} />
-        <Route path="/restaurant/:merchantId"  element={<RestaurantDetails />} />
+        <Route path="/"                       element={<Home />} />
+        <Route path="/restaurant/:merchantId" element={<RestaurantDetails />} />
 
         {/* ── Customer PROTECTED routes ── */}
-        <Route
-          path="/cart"
-          element={
-            <CustomerProtectedRoute>
-              <Cart />
-            </CustomerProtectedRoute>
-          }
-        />
-        <Route
-          path="/checkout"
-          element={
-            <CustomerProtectedRoute>
-              <Checkout />
-            </CustomerProtectedRoute>
-          }
-        />
-        <Route
-          path="/order-success/:orderId"
-          element={
-            <CustomerProtectedRoute>
-              <OrderSuccess />
-            </CustomerProtectedRoute>
-          }
-        />
-        <Route
-          path="/my-orders"
-          element={
-            <CustomerProtectedRoute>
-              <CustomerOrders />
-            </CustomerProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <CustomerProtectedRoute>
-              <Profile />
-            </CustomerProtectedRoute>
-          }
-        />
-        <Route
-          path="/reservations"
-          element={
-            <CustomerProtectedRoute>
-              <CustomerReservations />
-            </CustomerProtectedRoute>
-          }
-        />
+        <Route path="/cart" element={<CustomerProtectedRoute><Cart /></CustomerProtectedRoute>} />
+        <Route path="/checkout" element={<CustomerProtectedRoute><Checkout /></CustomerProtectedRoute>} />
+        <Route path="/order-success/:orderId" element={<CustomerProtectedRoute><OrderSuccess /></CustomerProtectedRoute>} />
+        <Route path="/my-orders" element={<CustomerProtectedRoute><CustomerOrders /></CustomerProtectedRoute>} />
+        <Route path="/profile" element={<CustomerProtectedRoute><Profile /></CustomerProtectedRoute>} />
+        <Route path="/reservations" element={<CustomerProtectedRoute><CustomerReservations /></CustomerProtectedRoute>} />
 
         {/* ── Merchant (ALL protected) ── */}
-        <Route
-          path="/merchant/dashboard"
-          element={
-            <MerchantProtectedRoute>
-              <MerchantDashboard />
-            </MerchantProtectedRoute>
-          }
-        />
-        <Route
-          path="/merchant/bookings"
-          element={
-            <MerchantProtectedRoute>
-              <MerchantBookings />
-            </MerchantProtectedRoute>
-          }
-        />
+        <Route path="/merchant/dashboard" element={<MerchantProtectedRoute><MerchantDashboard /></MerchantProtectedRoute>} />
+        <Route path="/merchant/bookings"  element={<MerchantProtectedRoute><MerchantBookings /></MerchantProtectedRoute>} />
 
         {/* ── Delivery (ALL protected) ── */}
-        <Route
-          path="/delivery/dashboard"
-          element={
-            <DeliveryProtectedRoute>
-              <DeliveryDashboard />
-            </DeliveryProtectedRoute>
-          }
-        />
-
+        <Route path="/delivery/dashboard" element={<DeliveryProtectedRoute><DeliveryDashboard /></DeliveryProtectedRoute>} />
+        <Route path="/partner/orders"    element={<DeliveryProtectedRoute><DeliveryPartnerOrders /></DeliveryProtectedRoute>} />
         {/* ── Admin — nested inside AdminLayout (ALL protected) ── */}
-        <Route
-  path="/admin"
-  element={
-    <AdminProtectedRoute>
-      <AdminLayout />
-    </AdminProtectedRoute>
-  }
->
-  <Route index element={<AdminHome />} />
-
-  <Route path="analytics" element={<Analytics />} />
-
-<Route path="logs" element={<Logs />} />
-
-<Route path="merchants" element={<AdminDashboard />} />
-
-<Route path="customers" element={<AdminCustomers />} />
-
-<Route path="delivery" element={<AdminDelivery />} />
-
-<Route path="settings" element={<AdminSettings />} />
-</Route>
+        <Route path="/admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
+          <Route index        element={<AdminHome />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="logs"      element={<Logs />} />
+          <Route path="merchants" element={<AdminDashboard />} />
+          <Route path="customers" element={<AdminCustomers />} />
+          <Route path="delivery"  element={<AdminDelivery />} />
+          <Route path="settings"  element={<AdminSettings />} />
+        </Route>
 
         {/* ── 404 ── */}
         <Route path="*" element={<NotFound />} />
