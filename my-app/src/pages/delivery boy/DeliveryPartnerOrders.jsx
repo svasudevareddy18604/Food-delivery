@@ -357,35 +357,36 @@ export default function DeliveryPartnerOrders() {
 
   /* ── Status update ── */
   const handleStatusChange = useCallback(async (orderId, nextStatus) => {
-    setUpdating(orderId);
-    try {
-      const token = getToken();
-      const res = await fetch(`${BASE_URL}/orders/${orderId}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ orderStatus: nextStatus }),
-      });
+  setUpdating(orderId);
+  try {
+    const token = getToken();
+    const res = await fetch(`${BASE_URL}/orders/${orderId}/status`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ orderStatus: nextStatus }),
+    });
 
-      const data = await res.json();
-      if (data.success) {
-        setOrders((prev) =>
-          prev.map((o) => o._id === orderId ? { ...o, orderStatus: nextStatus } : o)
-        );
-        setSelectedOrder((prev) =>
-          prev?._id === orderId ? { ...prev, orderStatus: nextStatus } : prev
-        );
-      } else {
-        throw new Error(data.message || "Update failed");
-      }
-    } catch (err) {
-      alert(`Failed to update order: ${err.message}`);
-    } finally {
-      setUpdating(null);
+    const data = await res.json();
+    if (data.success) {
+      setOrders((prev) =>
+        prev.map((o) => o._id === orderId ? { ...o, orderStatus: nextStatus } : o)
+      );
+      setSelectedOrder((prev) =>
+        prev?._id === orderId ? { ...prev, orderStatus: nextStatus } : prev
+      );
+      fetchOrders(true); // ← ADD THIS: sync with DB immediately
+    } else {
+      throw new Error(data.message || "Update failed");
     }
-  }, []);
+  } catch (err) {
+    alert(`Failed to update order: ${err.message}`);
+  } finally {
+    setUpdating(null);
+  }
+}, [fetchOrders]); 
 
   /* ── Filter ── */
   const filtered = orders.filter((o) => {
