@@ -19,7 +19,7 @@ router.get("/merchants", async (req, res) => {
     console.error(error);
     res.status(500).json({ success: false, message: "Server Error" });
   }
-});
+})
 
 /* =========================
    GET ALL CUSTOMERS
