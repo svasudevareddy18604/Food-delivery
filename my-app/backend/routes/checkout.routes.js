@@ -2,9 +2,10 @@ const express  = require("express");
 const Razorpay = require("razorpay");
 const crypto   = require("crypto");
 
-const Order    = require("../models/Order");
-const User     = require("../models/User");
-const createLog = require("../utils/createLog");
+const Order           = require("../models/Order");
+const User            = require("../models/User");
+const DeliveryPartner = require("../models/DeliveryPartner");
+const createLog       = require("../utils/createLog");
 
 const router   = express.Router();
 
@@ -30,6 +31,22 @@ const getCustomerInfo = async (customerId) => {
     };
   } catch {
     return { customerName: "Customer", customerPhone: "No contact" };
+  }
+};
+
+/* =========================
+   HELPER — AUTO ASSIGN DELIVERY PARTNER
+========================= */
+
+const autoAssignPartner = async () => {
+  try {
+    const partner = await DeliveryPartner.findOne({
+      approvalStatus: "Approved",
+      isActive:       true,
+    });
+    return partner?._id || null;
+  } catch {
+    return null;
   }
 };
 
@@ -89,6 +106,12 @@ router.post("/create-order", async (req, res) => {
     const orderNumber = generateOrderNumber();
 
     /* =========================
+       AUTO ASSIGN PARTNER
+    ========================= */
+
+    const deliveryPartnerId = await autoAssignPartner();
+
+    /* =========================
        COD ORDER
     ========================= */
 
@@ -102,10 +125,11 @@ router.post("/create-order", async (req, res) => {
         address,
         customerName,
         customerPhone,
-        paymentMethod: "COD",
-        paymentStatus: "PENDING",
-        orderStatus:   "PLACED",
+        paymentMethod:    "COD",
+        paymentStatus:    "PENDING",
+        orderStatus:      "PLACED",
         totalAmount,
+        deliveryPartnerId,
       });
 
       await createLog({
@@ -141,11 +165,12 @@ router.post("/create-order", async (req, res) => {
       address,
       customerName,
       customerPhone,
-      paymentMethod:   "ONLINE",
-      paymentStatus:   "PENDING",
-      orderStatus:     "PLACED",
+      paymentMethod:    "ONLINE",
+      paymentStatus:    "PENDING",
+      orderStatus:      "PLACED",
       totalAmount,
-      razorpayOrderId: rzpOrder.id,
+      razorpayOrderId:  rzpOrder.id,
+      deliveryPartnerId,
     });
 
     await createLog({
@@ -197,7 +222,6 @@ router.post("/verify-payment", async (req, res) => {
 
     if (expected !== razorpaySignature) {
 
-      /* fetch order for log context */
       const failedOrder = await Order.findById(orderId).select("customerName orderNumber");
 
       await createLog({

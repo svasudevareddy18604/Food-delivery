@@ -63,16 +63,8 @@ router.get("/delivery/:partnerId", async (req, res) => {
   try {
     const { partnerId } = req.params;
 
-    let orders = await Order.find({ deliveryPartnerId: partnerId })
+    const orders = await Order.find({ deliveryPartnerId: partnerId })
       .sort({ createdAt: -1 });
-
-    // DEV FALLBACK — shows active orders when none are assigned yet
-    // Remove this block once assign-partner is wired up in production
-    if (orders.length === 0) {
-      orders = await Order.find({
-        orderStatus: { $in: ["PLACED", "PREPARING", "OUT_FOR_DELIVERY"] },
-      }).sort({ createdAt: -1 });
-    }
 
     res.status(200).json({ success: true, orders });
   } catch (error) {
