@@ -57,24 +57,16 @@ function timeAgo(dateStr) {
 }
 
 function getToken() {
-  return (
-    localStorage.getItem("deliveryToken") ||
-    localStorage.getItem("token") ||
-    localStorage.getItem("authToken") ||
-    null
-  );
+  return localStorage.getItem("token") || null;
 }
 
 function getPartnerId() {
-  const keys = ["deliveryPartner", "partner", "user"];
-  for (const key of keys) {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(key) || "null");
-      const id = parsed?._id || parsed?.id;
-      if (id) return id;
-    } catch { /* skip */ }
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    return user?._id || null;
+  } catch {
+    return null;
   }
-  return null;
 }
 
 /* ─── Order Card ─────────────────────────────────────────────── */
