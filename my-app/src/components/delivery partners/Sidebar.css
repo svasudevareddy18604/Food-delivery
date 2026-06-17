@@ -20,6 +20,32 @@
   --sb-ease:            0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+
+/* ─────────────────────────────────────────────────────────────
+   ADD THIS to Sidebar.css (paste at the end)
+   Styles disabled/"coming soon" nav items so they look
+   intentionally inactive rather than broken.
+───────────────────────────────────────────────────────────── */
+
+.sb__item--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sb__item--disabled:hover {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+.sb__item-soon {
+  margin-left: 6px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.7;
+}
+
 /* ══════════════════════════════════════
    SIDEBAR SHELL
    Fixed, full-height, no scroll

@@ -152,6 +152,11 @@ app.use(
 );
 
 app.use(
+  "/api/delivery-dashboard",
+  require("./routes/deliverypartnerdashboard.routes.js")
+);
+
+app.use(
   "/api/admin",
   require("./routes/adminDelivery.routes")
 );

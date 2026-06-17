@@ -250,6 +250,13 @@ const deliveryPartnerSchema = new mongoose.Schema(
         default: true
     },
 
+    // Whether the partner has toggled themselves "online" to receive
+    // orders (distinct from isActive, which is admin block/unblock).
+    isOnline: {
+        type: Boolean,
+        default: false
+    },
+
     lastLogin: {
         type: Date,
         default: null

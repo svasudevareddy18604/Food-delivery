@@ -11,7 +11,7 @@ const NAV_ITEMS = [
       </svg>
     ),
     label: "Dashboard",
-    path: "/partner/dashboard",
+    path: "/delivery/dashboard",
     id: "dashboard",
   },
   {
@@ -47,6 +47,7 @@ const NAV_ITEMS = [
     label: "Deliveries",
     path: "/partner/deliveries",
     id: "deliveries",
+    disabled: true,
   },
   {
     icon: (
@@ -57,6 +58,7 @@ const NAV_ITEMS = [
     label: "Earnings",
     path: "/partner/earnings",
     id: "earnings",
+    disabled: true,
   },
   {
     icon: (
@@ -67,6 +69,7 @@ const NAV_ITEMS = [
     label: "Analytics",
     path: "/partner/analytics",
     id: "analytics",
+    disabled: true,
   },
   {
     icon: (
@@ -77,6 +80,7 @@ const NAV_ITEMS = [
     label: "Support",
     path: "/partner/support",
     id: "support",
+    disabled: true,
   },
   {
     icon: (
@@ -88,6 +92,7 @@ const NAV_ITEMS = [
     label: "Go Online",
     path: "/partner/status",
     id: "status",
+    disabled: true,
   },
 ];
 
@@ -101,6 +106,7 @@ const BOTTOM_ITEMS = [
     label: "Profile",
     path: "/partner/profile",
     id: "profile",
+    disabled: true,
   },
   {
     icon: (
@@ -112,6 +118,7 @@ const BOTTOM_ITEMS = [
     label: "Settings",
     path: "/partner/settings",
     id: "settings",
+    disabled: true,
   },
 ];
 
@@ -133,14 +140,19 @@ export default function Sidebar({ collapsed, onToggle }) {
 
   const handleLogout = () => {
     localStorage.clear();
-    navigate("/partner/login");
+    navigate("/login");
+  };
+
+  const handleNavClick = (item) => {
+    if (item.disabled) return;
+    navigate(item.path);
   };
 
   const initials = partner?.name
     ?.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() || "FP";
 
-  const activeId = NAV_ITEMS.find(n => location.pathname.startsWith(n.path))?.id
-    || BOTTOM_ITEMS.find(n => location.pathname.startsWith(n.path))?.id
+  const activeId = NAV_ITEMS.find(n => !n.disabled && location.pathname.startsWith(n.path))?.id
+    || BOTTOM_ITEMS.find(n => !n.disabled && location.pathname.startsWith(n.path))?.id
     || "dashboard";
 
   return (
@@ -196,13 +208,18 @@ export default function Sidebar({ collapsed, onToggle }) {
             return (
               <li key={item.id}>
                 <button
-                  className={`sb__item ${isActive ? "sb__item--active" : ""}`}
-                  onClick={() => navigate(item.path)}
-                  title={collapsed ? item.label : undefined}
+                  className={`sb__item ${isActive ? "sb__item--active" : ""} ${item.disabled ? "sb__item--disabled" : ""}`}
+                  onClick={() => handleNavClick(item)}
+                  disabled={item.disabled}
+                  title={item.disabled ? "Coming soon" : (collapsed ? item.label : undefined)}
+                  aria-disabled={item.disabled || undefined}
                 >
                   <span className="sb__item-icon">{item.icon}</span>
                   {!collapsed && (
-                    <span className="sb__item-label">{item.label}</span>
+                    <span className="sb__item-label">
+                      {item.label}
+                      {item.disabled && <span className="sb__item-soon">Soon</span>}
+                    </span>
                   )}
                 </button>
               </li>
@@ -219,13 +236,18 @@ export default function Sidebar({ collapsed, onToggle }) {
             return (
               <li key={item.id}>
                 <button
-                  className={`sb__item ${isActive ? "sb__item--active" : ""}`}
-                  onClick={() => navigate(item.path)}
-                  title={collapsed ? item.label : undefined}
+                  className={`sb__item ${isActive ? "sb__item--active" : ""} ${item.disabled ? "sb__item--disabled" : ""}`}
+                  onClick={() => handleNavClick(item)}
+                  disabled={item.disabled}
+                  title={item.disabled ? "Coming soon" : (collapsed ? item.label : undefined)}
+                  aria-disabled={item.disabled || undefined}
                 >
                   <span className="sb__item-icon">{item.icon}</span>
                   {!collapsed && (
-                    <span className="sb__item-label">{item.label}</span>
+                    <span className="sb__item-label">
+                      {item.label}
+                      {item.disabled && <span className="sb__item-soon">Soon</span>}
+                    </span>
                   )}
                 </button>
               </li>
