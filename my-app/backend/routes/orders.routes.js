@@ -56,7 +56,7 @@ router.get("/merchant/:merchantId", async (req, res) => {
 });
 
 /* =========================================================
-   GET DELIVERY PARTNER ORDERS
+   GET DELIVERY PARTNER ORDERS  (orders assigned to ME)
    ⚠️  Must be above /:orderId wildcard
 ========================================================= */
 router.get("/delivery/:partnerId", async (req, res) => {
@@ -73,7 +73,77 @@ router.get("/delivery/:partnerId", async (req, res) => {
 });
 
 /* =========================================================
-   ASSIGN DELIVERY PARTNER TO ORDER
+   GET AVAILABLE ORDERS  (unclaimed, visible to ALL partners)
+   First-come-first-serve pool — no location filtering yet.
+   ⚠️  Must be above /:orderId wildcard
+========================================================= */
+router.get("/available", async (req, res) => {
+  try {
+    const orders = await Order.find({
+      orderStatus: "PLACED",
+      deliveryPartnerId: null,
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, orders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/* =========================================================
+   ACCEPT ORDER  (first-come-first-serve, race-safe)
+   A delivery partner claims an unassigned order. Uses an
+   atomic findOneAndUpdate guarded on deliveryPartnerId: null
+   so two partners tapping "Accept" at the same time can't
+   both win — only the first write succeeds.
+   ⚠️  Must be above /:orderId wildcard
+========================================================= */
+router.put("/:orderId/accept", async (req, res) => {
+  try {
+    const { orderId }   = req.params;
+    const { partnerId } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(orderId))
+      return res.status(400).json({ success: false, message: "Invalid Order ID" });
+
+    if (!partnerId)
+      return res.status(400).json({ success: false, message: "partnerId is required" });
+
+    // Atomic: only succeeds if no one else has claimed it yet
+    const order = await Order.findOneAndUpdate(
+      { _id: orderId, deliveryPartnerId: null },
+      { deliveryPartnerId: partnerId, acceptedAt: new Date() },
+      { new: true }
+    );
+
+    if (!order) {
+      // Either the order doesn't exist, or someone already accepted it
+      const exists = await Order.findById(orderId).select("deliveryPartnerId");
+      if (!exists) {
+        return res.status(404).json({ success: false, message: "Order not found" });
+      }
+      return res.status(409).json({
+        success: false,
+        message: "Order already accepted by another partner",
+        code: "ALREADY_ACCEPTED",
+      });
+    }
+
+    await createLog({
+      user:   partnerId,
+      role:   "DeliveryPartner",
+      action: `Partner ${partnerId} accepted order ${orderId}`,
+      status: "Success",
+    });
+
+    res.status(200).json({ success: true, message: "Order accepted", order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/* =========================================================
+   ASSIGN DELIVERY PARTNER TO ORDER  (manual/admin override)
    ⚠️  Must be above /:orderId wildcard
 ========================================================= */
 router.put("/:orderId/assign-partner", async (req, res) => {

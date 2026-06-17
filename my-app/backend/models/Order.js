@@ -84,10 +84,18 @@ const orderSchema = new mongoose.Schema({
 
   /* =========================
      DELIVERY PARTNER
+     ⚠️  deliveryPartnerId must always be a User._id
+        (not a DeliveryPartner._id) — see DeliveryPartner.userId
   ========================= */
   deliveryPartnerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    default: null,
+  },
+
+  // When a partner accepted the order (first-come-first-serve audit trail)
+  acceptedAt: {
+    type: Date,
     default: null,
   },
 
@@ -106,5 +114,13 @@ const orderSchema = new mongoose.Schema({
   razorpayPaymentId: { type: String },
 
 }, { timestamps: true });
+
+/* =========================================================
+   INDEXES
+   Speeds up the delivery-partner "available orders" poll,
+   which filters on orderStatus + deliveryPartnerId every
+   time a partner's app refreshes.
+========================================================= */
+orderSchema.index({ orderStatus: 1, deliveryPartnerId: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

@@ -35,6 +35,15 @@
   --shadow-md: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
 }
 
+ 
+.oc--taken {
+  opacity: 0.55;
+  filter: grayscale(0.4);
+  transition: opacity 0.3s ease, filter 0.3s ease;
+  pointer-events: none;
+}
+ 
+
 /* ── Page Wrapper ───────────────────────────────── */
 .dpo {
   min-height: 100vh;
