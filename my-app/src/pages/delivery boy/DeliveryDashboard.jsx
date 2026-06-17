@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import "./DeliveryDashboard.css";
 import Layout from "../../components/delivery partners/Layout";
 
-// ─── Base URL ─────────────────────────────────────────────────
-const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000") + "/api";
+// ─── Base URLs (match your actual Express mounts) ─────────────
+const API_BASE        = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const PARTNER_BASE    = `${API_BASE}/api/delivery-partner`;    // deliveryRegistration.routes  → by-user/:userId
+const DASHBOARD_BASE  = `${API_BASE}/api/delivery-dashboard`;  // deliverypartnerdashboard.routes → stats, profile, orders, performance, availability
 
 // ─── Auth Helpers ─────────────────────────────────────────────
 function getToken() {
@@ -38,9 +40,7 @@ function AvailabilityToggle({ available, onChange }) {
       </div>
       <div className="avail-text">
         <span className="avail-status">{available ? "Available" : "Offline"}</span>
-        <span className="avail-sub">
-          {available ? "Accepting orders" : "Not accepting"}
-        </span>
+        <span className="avail-sub">{available ? "Accepting orders" : "Not accepting"}</span>
       </div>
       <div className={`avail-switch ${available ? "switch-on" : "switch-off"}`}>
         <div className="avail-thumb" />
@@ -57,7 +57,6 @@ function StatusBadge({ status }) {
     PREPARING:        { cls: "badge-purple", label: "Preparing"         },
     PLACED:           { cls: "badge-amber",  label: "Placed"            },
     CANCELLED:        { cls: "badge-red",    label: "Cancelled"         },
-    // legacy
     Delivered:        { cls: "badge-green",  label: "Delivered"         },
     "In Transit":     { cls: "badge-blue",   label: "In Transit"        },
     Pending:          { cls: "badge-amber",  label: "Pending"           },
@@ -86,15 +85,9 @@ function BikeLoader({ text = "Getting your dashboard ready…" }) {
   return (
     <div className="bike-loader-wrap">
       <div className="bike-scene">
-        <div className="bike-road">
-          <div className="bike-dashes" />
-        </div>
+        <div className="bike-road"><div className="bike-dashes" /></div>
         <div className="bike-rider">
-          <svg
-            viewBox="0 0 80 52"
-            className="bike-svg"
-            xmlns="http://www.w3.org/2000/svg"
-          >
+          <svg viewBox="0 0 80 52" className="bike-svg" xmlns="http://www.w3.org/2000/svg">
             <circle cx="18" cy="38" r="12" stroke="#6366f1" strokeWidth="3" fill="none" />
             <circle cx="18" cy="38" r="3" fill="#6366f1" />
             <circle cx="62" cy="38" r="12" stroke="#6366f1" strokeWidth="3" fill="none" />
@@ -114,14 +107,10 @@ function BikeLoader({ text = "Getting your dashboard ready…" }) {
             <line x1="36" y1="12" x2="36" y2="9" stroke="#22c55e" strokeWidth="1.5" />
           </svg>
         </div>
-        <div className="speed-lines">
-          <span /><span /><span />
-        </div>
+        <div className="speed-lines"><span /><span /><span /></div>
       </div>
       <p className="bike-loader-text">{text}</p>
-      <div className="bike-loader-dots">
-        <span /><span /><span />
-      </div>
+      <div className="bike-loader-dots"><span /><span /><span /></div>
     </div>
   );
 }
@@ -145,8 +134,7 @@ function MiniStat({ label, value, unit = "" }) {
     <div className="mini-stat">
       <p className="mini-stat__label">{label}</p>
       <p className="mini-stat__value">
-        {value}
-        <span className="mini-stat__unit">{unit}</span>
+        {value}<span className="mini-stat__unit">{unit}</span>
       </p>
     </div>
   );
@@ -155,70 +143,74 @@ function MiniStat({ label, value, unit = "" }) {
 // ─── API Layer ────────────────────────────────────────────────
 
 /**
- * Resolve DeliveryPartner._id from User._id stored in localStorage.
- * The login flow only stores User._id; dashboard endpoints need DeliveryPartner._id.
+ * Resolve DeliveryPartner._id from the User._id stored in localStorage.
+ * Route: GET /api/delivery-partner/by-user/:userId  (deliveryRegistration.routes)
  */
 async function resolvePartnerId(userId) {
-  const res = await fetch(`${BASE_URL}/delivery-partners/by-user/${userId}`, {
+  const res = await fetch(`${PARTNER_BASE}/by-user/${userId}`, {
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error("Could not find your delivery partner account.");
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || "Could not find your delivery partner account.");
+  }
   const data = await res.json();
-  // Backend returns the DeliveryPartner document; _id is the partnerId we need.
-  const pid = data._id || data.partnerId || data.data?._id;
+  // Support common response shapes: flat { _id } or nested { data: { _id } }
+  const pid = data._id || data.partnerId || data.data?._id || data.partner?._id;
   if (!pid) throw new Error("Partner ID missing from server response.");
   return pid;
 }
 
+/** GET /api/delivery-dashboard/:partnerId/profile */
 async function fetchProfile(partnerId) {
-  const res = await fetch(`${BASE_URL}/delivery-partners/${partnerId}/profile`, {
+  const res = await fetch(`${DASHBOARD_BASE}/${partnerId}/profile`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch profile.");
   return res.json();
 }
 
+/** GET /api/delivery-dashboard/:partnerId/stats */
 async function fetchDashboardStats(partnerId) {
-  const res = await fetch(`${BASE_URL}/delivery-partners/${partnerId}/stats`, {
+  const res = await fetch(`${DASHBOARD_BASE}/${partnerId}/stats`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch stats.");
   return res.json();
 }
 
+/** GET /api/delivery-dashboard/:partnerId/performance */
 async function fetchPerformance(partnerId) {
-  const res = await fetch(`${BASE_URL}/delivery-partners/${partnerId}/performance`, {
+  const res = await fetch(`${DASHBOARD_BASE}/${partnerId}/performance`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch performance.");
   return res.json();
 }
 
+/** GET /api/delivery-dashboard/:partnerId/orders?status=&page=&limit= */
 async function fetchOrders(partnerId, { status, page = 1, limit = 10 } = {}) {
   const params = new URLSearchParams({ page, limit });
   if (status && status !== "all") params.append("status", status);
-  const res = await fetch(
-    `${BASE_URL}/delivery-partners/${partnerId}/orders?${params}`,
-    { headers: authHeaders() }
-  );
+  const res = await fetch(`${DASHBOARD_BASE}/${partnerId}/orders?${params}`, {
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch orders.");
   return res.json();
 }
 
+/** PATCH /api/delivery-dashboard/:partnerId/availability */
 async function toggleAvailability(partnerId, available) {
-  const res = await fetch(
-    `${BASE_URL}/delivery-partners/${partnerId}/availability`,
-    {
-      method: "PATCH",
-      headers: authHeaders(),
-      body: JSON.stringify({ available }),
-    }
-  );
+  const res = await fetch(`${DASHBOARD_BASE}/${partnerId}/availability`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({ available }),
+  });
   if (!res.ok) throw new Error("Failed to update availability.");
   return res.json();
 }
 
-// ─── Tabs & Quick Actions ─────────────────────────────────────
+// ─── Static Config ────────────────────────────────────────────
 const TABS = [
   { id: "all",              label: "All"          },
   { id: "OUT_FOR_DELIVERY", label: "Active"        },
@@ -229,15 +221,15 @@ const TABS = [
 ];
 
 const QUICK_ACTIONS = [
-  { icon: "🗺️",  label: "Navigate",   cls: "qa-indigo", desc: "Open route map"    },
-  { icon: "📋",  label: "My Orders",  cls: "qa-green",  desc: "Full order history" },
-  { icon: "💬",  label: "Support",    cls: "qa-amber",  desc: "Chat with support"  },
-  { icon: "📊",  label: "Earnings",   cls: "qa-blue",   desc: "View your reports"  },
-  { icon: "🔔",  label: "Alerts",     cls: "qa-pink",   desc: "View notifications" },
-  { icon: "⚙️",  label: "Settings",   cls: "qa-slate",  desc: "Account settings"   },
+  { icon: "🗺️", label: "Navigate",  cls: "qa-indigo", desc: "Open route map"    },
+  { icon: "📋", label: "My Orders", cls: "qa-green",  desc: "Full order history" },
+  { icon: "💬", label: "Support",   cls: "qa-amber",  desc: "Chat with support"  },
+  { icon: "📊", label: "Earnings",  cls: "qa-blue",   desc: "View your reports"  },
+  { icon: "🔔", label: "Alerts",    cls: "qa-pink",   desc: "View notifications" },
+  { icon: "⚙️", label: "Settings",  cls: "qa-slate",  desc: "Account settings"   },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────
+// ─── Pure Helpers ─────────────────────────────────────────────
 function fmt(n) {
   if (n === undefined || n === null) return "—";
   return Number(n).toLocaleString("en-IN");
@@ -252,19 +244,13 @@ function getGreeting() {
 
 function fmtClock(date) {
   return date.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true,
   });
 }
 
 function fmtDate(date) {
   return date.toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 }
 
@@ -274,75 +260,46 @@ function formatTime(dateStr) {
   if (diff < 60)    return "just now";
   if (diff < 3600)  return `${Math.floor(diff / 60)} min ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return new Date(dateStr).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-  });
+  return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
 function buildStats(data) {
   return [
     {
-      id: 1,
-      icon: "📦",
-      label: "Total Orders",
+      id: 1, icon: "📦", label: "Total Orders",
       value: fmt(data.totalOrders),
-      // change fields are null when no historical snapshot exists — badge simply won't render
-      change: data.totalOrdersChange ?? null,
-      up: true,
-      colorClass: "stat-indigo",
-      bg: "#eef2ff",
+      change: data.totalOrdersChange ?? null, up: true,
+      colorClass: "stat-indigo", bg: "#eef2ff",
     },
     {
-      id: 2,
-      icon: "✅",
-      label: "Delivered",
+      id: 2, icon: "✅", label: "Delivered",
       value: fmt(data.delivered),
-      change: data.deliveredChange ?? null,
-      up: data.deliveredUp ?? null,
-      colorClass: "stat-green",
-      bg: "#f0fdf4",
+      change: data.deliveredChange ?? null, up: data.deliveredUp ?? null,
+      colorClass: "stat-green", bg: "#f0fdf4",
     },
     {
-      id: 3,
-      icon: "🏃",
-      label: "Active Now",
+      id: 3, icon: "🏃", label: "Active Now",
       value: fmt(data.active ?? 0),
-      change: null,
-      up: null,
-      colorClass: "stat-blue",
-      bg: "#eff6ff",
+      change: null, up: null,
+      colorClass: "stat-blue", bg: "#eff6ff",
     },
     {
-      id: 4,
-      icon: "💰",
-      label: "Today's Earnings",
+      id: 4, icon: "💰", label: "Today's Earnings",
       value: `₹${fmt(data.todayEarnings)}`,
-      change: data.earningsChange ?? null,
-      up: data.earningsUp ?? null,
-      colorClass: "stat-amber",
-      bg: "#fffbeb",
+      change: data.earningsChange ?? null, up: data.earningsUp ?? null,
+      colorClass: "stat-amber", bg: "#fffbeb",
     },
     {
-      id: 5,
-      icon: "❌",
-      label: "Cancelled",
+      id: 5, icon: "❌", label: "Cancelled",
       value: fmt(data.cancelled),
-      change: data.cancelledChange ?? null,
-      up: false,
-      colorClass: "stat-red",
-      bg: "#fef2f2",
+      change: data.cancelledChange ?? null, up: false,
+      colorClass: "stat-red", bg: "#fef2f2",
     },
     {
-      id: 6,
-      icon: "⭐",
-      label: "Avg Rating",
-      // avgRating is null from backend (no data yet) — show "—" honestly
+      id: 6, icon: "⭐", label: "Avg Rating",
       value: data.avgRating ? Number(data.avgRating).toFixed(1) : "—",
-      change: null,
-      up: null,
-      colorClass: "stat-purple",
-      bg: "#fdf4ff",
+      change: null, up: null,
+      colorClass: "stat-purple", bg: "#fdf4ff",
     },
   ];
 }
@@ -358,9 +315,7 @@ function buildPerf(data) {
 
 // ─── Dashboard Page ───────────────────────────────────────────
 export default function DeliveryDashboard() {
-  // Change 1: Dynamic partnerId resolved from localStorage User._id
   const [partnerId,     setPartnerId]     = useState(null);
-
   const [available,     setAvailable]     = useState(false);
   const [availLoading,  setAvailLoading]  = useState(false);
   const [activeTab,     setActiveTab]     = useState("all");
@@ -381,23 +336,28 @@ export default function DeliveryDashboard() {
     return () => clearInterval(t);
   }, []);
 
-  // ── Step 1: Resolve DeliveryPartner._id from logged-in User._id ──
+  // ── Mount: resolve partnerId → fetch all dashboard data ──
   useEffect(() => {
     let cancelled = false;
-    async function resolveAndInit() {
+
+    async function init() {
       setLoading(true);
       setError(null);
 
+      // 1. Get User._id from localStorage
       const userId = getUserId();
       if (!userId) {
-        setError("You are not logged in. Please log in again.");
-        setLoading(false);
+        if (!cancelled) {
+          setError("You are not logged in. Please log in again.");
+          setLoading(false);
+        }
         return;
       }
 
-      let resolvedPartnerId;
+      // 2. Resolve DeliveryPartner._id  (GET /api/delivery-partner/by-user/:userId)
+      let pid;
       try {
-        resolvedPartnerId = await resolvePartnerId(userId);
+        pid = await resolvePartnerId(userId);
       } catch (err) {
         if (!cancelled) {
           setError(err.message || "Could not find your delivery partner account.");
@@ -407,25 +367,25 @@ export default function DeliveryDashboard() {
       }
 
       if (cancelled) return;
-      setPartnerId(resolvedPartnerId);
+      setPartnerId(pid);
 
-      // ── Step 2: Fetch all dashboard data using the resolved partnerId ──
+      // 3. Fetch all dashboard data in parallel
       try {
         const [profileData, statsData, perfData] = await Promise.all([
-          fetchProfile(resolvedPartnerId),
-          fetchDashboardStats(resolvedPartnerId),
-          fetchPerformance(resolvedPartnerId),
+          fetchProfile(pid),
+          fetchDashboardStats(pid),
+          fetchPerformance(pid),
         ]);
         if (cancelled) return;
 
         setProfile(profileData);
-        // Seed the availability toggle from the real backend value
         setAvailable(!!profileData?.available);
         setStats(buildStats(statsData));
         setPerformance(buildPerf(perfData));
         setStatsLoaded(true);
 
-        const ordersData = await fetchOrders(resolvedPartnerId, { status: "all" });
+        // 4. Fetch orders after parallel batch completes
+        const ordersData = await fetchOrders(pid, { status: "all" });
         if (cancelled) return;
 
         setOrders(ordersData.orders || []);
@@ -435,17 +395,17 @@ export default function DeliveryDashboard() {
           pages: ordersData.pages || 1,
         });
       } catch (err) {
-        if (!cancelled) setError(err.message || "Failed to load dashboard.");
+        if (!cancelled) setError(err.message || "Failed to load dashboard data.");
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
-    resolveAndInit();
+    init();
     return () => { cancelled = true; };
   }, []); // runs once on mount
 
-  // ── Orders fetch (tab switch / pagination) ──
+  // ── Orders fetch on tab / page change ──
   const loadOrders = useCallback(
     async (status, page = 1) => {
       if (!partnerId) return;
@@ -476,13 +436,12 @@ export default function DeliveryDashboard() {
   const handleAvailToggle = async () => {
     if (availLoading || !partnerId) return;
     const next = !available;
-    setAvailable(next);
+    setAvailable(next); // optimistic
     setAvailLoading(true);
     try {
       await toggleAvailability(partnerId, next);
     } catch {
-      // Revert optimistic update on failure
-      setAvailable(!next);
+      setAvailable(!next); // revert on failure
     } finally {
       setAvailLoading(false);
     }
@@ -492,7 +451,7 @@ export default function DeliveryDashboard() {
     (o) => o.orderStatus === "OUT_FOR_DELIVERY" || o.status === "In Transit"
   );
 
-  // ── Render states ──
+  // ── Render: loading / error / dashboard ──
   if (loading) return <Layout><BikeLoader /></Layout>;
 
   if (error) {
@@ -526,9 +485,7 @@ export default function DeliveryDashboard() {
                 alt="avatar"
                 className="topbar-avatar-img"
               />
-              <div
-                className={`avatar-status-dot ${available ? "dot-green" : "dot-gray"}`}
-              />
+              <div className={`avatar-status-dot ${available ? "dot-green" : "dot-gray"}`} />
             </div>
             <div className="db-topbar__info">
               <div className="db-topbar__greeting">
@@ -552,10 +509,7 @@ export default function DeliveryDashboard() {
           </div>
 
           <div className="db-topbar__right">
-            <AvailabilityToggle
-              available={available}
-              onChange={handleAvailToggle}
-            />
+            <AvailabilityToggle available={available} onChange={handleAvailToggle} />
           </div>
         </div>
 
@@ -569,9 +523,7 @@ export default function DeliveryDashboard() {
             <div className="active-alert__orders">
               {activeOrders.slice(0, 2).map((o) => (
                 <div key={o._id || o.id} className="active-order-chip">
-                  <span className="aoc-id">
-                    #{o.orderNumber || o.orderId || o._id?.slice(-6)}
-                  </span>
+                  <span className="aoc-id">#{o.orderNumber || o.orderId || o._id?.slice(-6)}</span>
                   <span className="aoc-addr">{o.address || o.deliveryAddress}</span>
                   <button className="aoc-nav">Navigate →</button>
                 </div>
@@ -586,13 +538,9 @@ export default function DeliveryDashboard() {
             <span className="offline-icon">😴</span>
             <div>
               <p className="offline-title">You're currently offline</p>
-              <p className="offline-sub">
-                Toggle available above to start accepting delivery orders.
-              </p>
+              <p className="offline-sub">Toggle available above to start accepting delivery orders.</p>
             </div>
-            <button className="offline-go-online" onClick={handleAvailToggle}>
-              Go Online
-            </button>
+            <button className="offline-go-online" onClick={handleAvailToggle}>Go Online</button>
           </div>
         )}
 
@@ -606,23 +554,16 @@ export default function DeliveryDashboard() {
                   className="stat-card"
                   style={{ animationDelay: `${i * 60}ms` }}
                 >
-                  <div
-                    className={`stat-card__icon ${s.colorClass}`}
-                    style={{ background: s.bg }}
-                  >
+                  <div className={`stat-card__icon ${s.colorClass}`} style={{ background: s.bg }}>
                     {s.icon}
                   </div>
                   <div className="stat-card__body">
                     <p className="stat-card__label">{s.label}</p>
                     <p className="stat-card__value">{s.value}</p>
                   </div>
-                  {/* Change badge: only renders if s.change is truthy (null = no badge) */}
+                  {/* Only renders when s.change is non-null (backend has historical data) */}
                   {s.change && (
-                    <span
-                      className={`stat-card__change ${
-                        s.up ? "change-up" : "change-down"
-                      }`}
-                    >
+                    <span className={`stat-card__change ${s.up ? "change-up" : "change-down"}`}>
                       {s.up ? "▲" : "▼"} {s.change}
                     </span>
                   )}
@@ -632,18 +573,17 @@ export default function DeliveryDashboard() {
 
         {/* ══════════ MINI KPI ROW ══════════ */}
         <div className="db-kpi-row">
-          {/* Change 4: Fake fallbacks removed — "—" shown honestly when data is absent */}
-          <MiniStat label="Shift Hours"      value={profile?.shiftHours     ?? "—"} unit="h"   />
+          <MiniStat label="Shift Hours"       value={profile?.shiftHours      ?? "—"} unit="h"    />
           <div className="kpi-divider" />
-          <MiniStat label="KM Covered"       value={profile?.kmCovered      ?? "—"} unit=" km" />
+          <MiniStat label="KM Covered"        value={profile?.kmCovered       ?? "—"} unit=" km"  />
           <div className="kpi-divider" />
-          <MiniStat label="Deliveries Today" value={profile?.deliveriesToday ?? "—"}            />
+          <MiniStat label="Deliveries Today"  value={profile?.deliveriesToday  ?? "—"}             />
           <div className="kpi-divider" />
           <MiniStat label="Avg Delivery Time" value={profile?.avgDeliveryTime ?? "—"} unit=" min" />
           <div className="kpi-divider" />
-          <MiniStat label="This Week"  value={`₹${fmt(profile?.weekEarnings  ?? 0)}`} />
+          <MiniStat label="This Week"         value={`₹${fmt(profile?.weekEarnings  ?? 0)}`}      />
           <div className="kpi-divider" />
-          <MiniStat label="This Month" value={`₹${fmt(profile?.monthEarnings ?? 0)}`} />
+          <MiniStat label="This Month"        value={`₹${fmt(profile?.monthEarnings ?? 0)}`}      />
         </div>
 
         {/* ══════════ BOTTOM GRID ══════════ */}
@@ -679,11 +619,7 @@ export default function DeliveryDashboard() {
             {ordersLoading ? (
               <div className="orders-loading">
                 <div className="mini-bike">
-                  <svg
-                    viewBox="0 0 40 26"
-                    className="mini-bike-svg"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
+                  <svg viewBox="0 0 40 26" className="mini-bike-svg" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="9"  cy="19" r="6" stroke="#6366f1" strokeWidth="2" fill="none" />
                     <circle cx="31" cy="19" r="6" stroke="#6366f1" strokeWidth="2" fill="none" />
                     <line x1="9"  y1="19" x2="20" y2="9"  stroke="#1e293b" strokeWidth="1.5" strokeLinecap="round" />
@@ -702,19 +638,8 @@ export default function DeliveryDashboard() {
                   <table className="db-table">
                     <thead>
                       <tr>
-                        {[
-                          "Order #",
-                          "Customer",
-                          "Items",
-                          "Address",
-                          "Amount",
-                          "Payment",
-                          "Status",
-                          "Time",
-                        ].map((h) => (
-                          <th key={h} className="db-th">
-                            {h}
-                          </th>
+                        {["Order #", "Customer", "Items", "Address", "Amount", "Payment", "Status", "Time"].map((h) => (
+                          <th key={h} className="db-th">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -730,56 +655,32 @@ export default function DeliveryDashboard() {
                         </tr>
                       ) : (
                         orders.map((o, i) => (
-                          <tr
-                            key={o._id || o.id}
-                            className={i % 2 === 0 ? "tr-even" : ""}
-                          >
+                          <tr key={o._id || o.id} className={i % 2 === 0 ? "tr-even" : ""}>
                             <td className="db-td td-id">
                               #{o.orderNumber || o.orderId || o._id?.slice(-6)}
                             </td>
                             <td className="db-td">
                               <div className="cust-cell">
-                                <span className="cust-name">
-                                  {o.customerName || "Customer"}
-                                </span>
+                                <span className="cust-name">{o.customerName || "Customer"}</span>
                                 {o.customerPhone && (
                                   <span className="cust-phone">{o.customerPhone}</span>
                                 )}
                               </div>
                             </td>
                             <td className="db-td td-items">
-                              {o.items?.length ? (
-                                <span className="items-count">
-                                  {o.items.length} item
-                                  {o.items.length > 1 ? "s" : ""}
-                                </span>
-                              ) : (
-                                "—"
-                              )}
+                              {o.items?.length
+                                ? <span className="items-count">{o.items.length} item{o.items.length > 1 ? "s" : ""}</span>
+                                : "—"}
                             </td>
-                            <td
-                              className="db-td td-addr"
-                              title={o.address || o.deliveryAddress}
-                            >
+                            <td className="db-td td-addr" title={o.address || o.deliveryAddress}>
                               {(o.address || o.deliveryAddress || "").substring(0, 32)}
-                              {(o.address || o.deliveryAddress || "").length > 32
-                                ? "…"
-                                : ""}
+                              {(o.address || o.deliveryAddress || "").length > 32 ? "…" : ""}
                             </td>
                             <td className="db-td td-amt">
-                              ₹
-                              {Number(
-                                o.totalAmount || o.amount || 0
-                              ).toLocaleString("en-IN")}
+                              ₹{Number(o.totalAmount || o.amount || 0).toLocaleString("en-IN")}
                             </td>
                             <td className="db-td">
-                              <span
-                                className={`pay-badge ${
-                                  o.paymentMethod === "ONLINE"
-                                    ? "pay-online"
-                                    : "pay-cod"
-                                }`}
-                              >
+                              <span className={`pay-badge ${o.paymentMethod === "ONLINE" ? "pay-online" : "pay-cod"}`}>
                                 {o.paymentMethod || "COD"}
                               </span>
                             </td>
@@ -806,8 +707,7 @@ export default function DeliveryDashboard() {
                       ← Prev
                     </button>
                     <span className="pg-info">
-                      Page {pagination.page} of {pagination.pages} ·{" "}
-                      {fmt(pagination.total)} orders
+                      Page {pagination.page} of {pagination.pages} · {fmt(pagination.total)} orders
                     </span>
                     <button
                       className="pg-btn"
@@ -832,7 +732,6 @@ export default function DeliveryDashboard() {
                   <h3 className="db-card__title">My Performance</h3>
                   <p className="db-card__sub">This month's metrics</p>
                 </div>
-                {/* Only show rating chip when real rating exists */}
                 {profile?.rating != null && (
                   <div className="rating-chip">
                     <span className="rating-star-icon">⭐</span>
@@ -857,21 +756,16 @@ export default function DeliveryDashboard() {
                       <div className="perf-top">
                         <span className="perf-icon">{p.icon}</span>
                         <span className="perf-label">{p.label}</span>
-                        {/* value is 0 from backend (honest zero, not fake data) */}
                         <span className={`perf-pct ${p.cls}`}>{p.value ?? 0}%</span>
                       </div>
                       <div className="perf-bar">
-                        <div
-                          className={`perf-fill ${p.cls}`}
-                          style={{ width: `${p.value ?? 0}%` }}
-                        />
+                        <div className={`perf-fill ${p.cls}`} style={{ width: `${p.value ?? 0}%` }} />
                       </div>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Review summary: only shown when real data exists */}
               {profile?.totalReviews > 0 && profile?.rating != null && (
                 <div className="review-row">
                   <span className="review-stars">
@@ -879,8 +773,7 @@ export default function DeliveryDashboard() {
                     {"☆".repeat(5 - Math.round(profile.rating || 0))}
                   </span>
                   <span className="review-text">
-                    {Number(profile.rating).toFixed(1)} / 5.0 ·{" "}
-                    {fmt(profile.totalReviews)} reviews
+                    {Number(profile.rating).toFixed(1)} / 5.0 · {fmt(profile.totalReviews)} reviews
                   </span>
                 </div>
               )}
@@ -889,12 +782,9 @@ export default function DeliveryDashboard() {
             {/* Quick Actions */}
             <div className="db-card">
               <h3 className="db-card__title">Quick Actions</h3>
-              <p className="db-card__sub" style={{ marginBottom: 14 }}>
-                Shortcuts for your workflow
-              </p>
+              <p className="db-card__sub" style={{ marginBottom: 14 }}>Shortcuts for your workflow</p>
               <div className="qa-grid">
                 {QUICK_ACTIONS.map((a) => (
-                  // Change 6: inert for now; onClick wiring is a separate follow-up task
                   <button key={a.label} className="qa-btn">
                     <span className={`qa-icon ${a.cls}`}>{a.icon}</span>
                     <span className="qa-label">{a.label}</span>
@@ -912,37 +802,26 @@ export default function DeliveryDashboard() {
                   <p className="db-card__sub">Breakdown summary</p>
                 </div>
                 <span className="earn-period-badge">
-                  {new Date().toLocaleDateString("en-IN", {
-                    month: "long",
-                    year: "numeric",
-                  })}
+                  {new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
                 </span>
               </div>
               <div className="earn-breakdown">
                 <div className="earn-row">
                   <span className="earn-label">Today</span>
-                  <span className="earn-val earn-green">
-                    ₹{fmt(profile?.todayEarnings ?? 0)}
-                  </span>
+                  <span className="earn-val earn-green">₹{fmt(profile?.todayEarnings ?? 0)}</span>
                 </div>
                 <div className="earn-row">
                   <span className="earn-label">This Week</span>
-                  <span className="earn-val">
-                    ₹{fmt(profile?.weekEarnings ?? 0)}
-                  </span>
+                  <span className="earn-val">₹{fmt(profile?.weekEarnings ?? 0)}</span>
                 </div>
                 <div className="earn-row">
                   <span className="earn-label">This Month</span>
-                  <span className="earn-val">
-                    ₹{fmt(profile?.monthEarnings ?? 0)}
-                  </span>
+                  <span className="earn-val">₹{fmt(profile?.monthEarnings ?? 0)}</span>
                 </div>
                 <div className="earn-divider" />
                 <div className="earn-row earn-row--total">
                   <span className="earn-label">Incentives Earned</span>
-                  <span className="earn-val earn-gold">
-                    ₹{fmt(profile?.incentives ?? 0)}
-                  </span>
+                  <span className="earn-val earn-gold">₹{fmt(profile?.incentives ?? 0)}</span>
                 </div>
               </div>
             </div>
