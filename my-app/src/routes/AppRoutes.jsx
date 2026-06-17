@@ -29,6 +29,7 @@ import DeliveryReview         from "../pages/delivery boy/DeliveryReview";
 import DeliveryRejected       from "../pages/delivery boy/DeliveryRejected";
 import DeliveryDashboard      from "../pages/delivery boy/DeliveryDashboard";
 import DeliveryPartnerOrders  from "../pages/delivery boy/DeliveryPartnerOrders";
+import AvailableOrders        from "../pages/delivery boy/AvailableOrders";
 import DeliveryProtectedRoute from "./DeliveryProtectedRoute";
 
 /* ── Admin ── */
@@ -96,6 +97,7 @@ export default function AppRoutes() {
 
         {/* ── Delivery (ALL protected) ── */}
         <Route path="/delivery/dashboard" element={<DeliveryProtectedRoute><DeliveryDashboard /></DeliveryProtectedRoute>} />
+        <Route path="/partner/orders/available" element={<DeliveryProtectedRoute><AvailableOrders /></DeliveryProtectedRoute>} />
         <Route path="/partner/orders"    element={<DeliveryProtectedRoute><DeliveryPartnerOrders /></DeliveryProtectedRoute>} />
         {/* ── Admin — nested inside AdminLayout (ALL protected) ── */}
         <Route path="/admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
